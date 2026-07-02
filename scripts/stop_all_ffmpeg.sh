@@ -1,0 +1,9 @@
+services:
+  alexa-hls-nginx:
+    image: nginx:alpine
+    container_name: alexa_hls_nginx
+    restart: unless-stopped
+    ports:
+      - "8090:80"
+    volumes:
+      - ${HLS_PATH:-~/alexa_hls}:/usr/share/nginx/html:ro
