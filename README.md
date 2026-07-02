@@ -1,6 +1,6 @@
 # Alexa RTSP Bridge
 
-> Bridge any RTSP camera to Amazon Alexa using AWS Lambda, Home Assistant, FFmpeg, HLS, Docker and Cloudflare Tunnel.
+> Open-source middleware that enables RTSP cameras to stream natively on Amazon Alexa through the Alexa Smart Home Camera API.
 
 <p align="center">
   <img width="1536" height="1024" alt="Alexa RTSP Bridge demo" src="https://github.com/user-attachments/assets/0d4dee5b-a272-4c6c-977d-93b728e92c8b" />
