@@ -141,3 +141,33 @@ Instead of trying to force Alexa to understand RTSP, this project converts RTSP 
                         │      Alexa         │
                         │  Plays HLS Stream  │
                         └────────────────────┘
+The video pipeline runs separately:
+
+                        ┌────────────────────┐
+                        │    RTSP Camera     │
+                        └─────────┬──────────┘
+                                  │
+                                  │ rtsp://user:pass@camera
+                                  ▼
+                        ┌────────────────────┐
+                        │      FFmpeg        │
+                        │ RTSP → HLS Encode  │
+                        └─────────┬──────────┘
+                                  │
+                                  │ index.m3u8 + .ts segments
+                                  ▼
+                        ┌────────────────────┐
+                        │       Nginx        │
+                        │   HLS Web Server   │
+                        └─────────┬──────────┘
+                                  │
+                                  │ HTTPS via Tunnel
+                                  ▼
+                        ┌────────────────────┐
+                        │ Cloudflare Tunnel  │
+                        └─────────┬──────────┘
+                                  │
+                                  ▼
+                        ┌────────────────────┐
+                        │    Amazon Alexa    │
+                        └────────────────────┘
