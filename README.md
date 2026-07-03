@@ -9,8 +9,6 @@ Alexa RTSP Bridge
 <p align="center">
 Bridge any RTSP IP camera to Amazon Alexa using Home Assistant, AWS Lambda, FFmpeg, Docker and Cloudflare Tunnel.
 </p>
-# Alexa RTSP Bridge
-
 > Bridge any RTSP IP camera to Amazon Alexa using Home Assistant, AWS Lambda, FFmpeg, Docker and Cloudflare Tunnel.
 
 <p align="center">
