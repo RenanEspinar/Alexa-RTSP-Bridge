@@ -1,7 +1,9 @@
 {
-  "version": "0.5.0b1",
-  "source": "v0.4 guided installer with opt-in AAC, local diagnostics and watchdog recovery enhancements",
+  "version": "0.6.0b1",
+  "source": "v0.5 gateway plus optional OpenCV/ONNX YOLOX-Nano/Norfair AI sidecar",
   "evidence_build": "0.2.0b1",
   "evidence_date": "2026-11-19",
-  "status": "v0.5 preview: 31 local tests; audio playback on Fire TV and long-term recovery still need field tests"
+  "status": "v0.6 AI beta: 41 automated tests on reconstructed v0.5 + v0.6 source; pretrained model and real camera/Alexa coexistence not yet field-verified",
+  "default_ai": "off",
+  "model": "YOLOX Nano COCO, upstream Apache-2.0, SHA-256 pinned"
 }

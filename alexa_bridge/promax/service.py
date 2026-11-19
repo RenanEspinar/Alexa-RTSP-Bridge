@@ -14,6 +14,7 @@ from .media import Manager, inspect_source, inspect_audio_source, select_mode
 from .diagnostics import system_metrics, probe_camera, check_local_hls
 from .security import SLUG, make_path, verify_path
 from .store import Store
+from .ai_store import AIStore, EVENT_ID
 
 STATIC = Path(__file__).parent / 'static'
 MAX_REQUEST = 8_192
@@ -22,6 +23,7 @@ MAX_REQUEST = 8_192
 class Application:
     def __init__(self, root, *, idle_timeout=30, snapshot_ttl=120, watchdog=True):
         self.store = Store(root)
+        self.ai = AIStore(root)
         self.manager = Manager(self.store, idle_timeout, snapshot_ttl, watchdog=watchdog)
         self.csrf = secrets.token_urlsafe(32)
         self.started = time.time()
@@ -68,7 +70,7 @@ def make_handler(app: Application, admin=False):
                 elif path == '/static/app.js':
                     respond(self, 200, (STATIC / 'app.js').read_bytes(), 'application/javascript; charset=utf-8', head=head)
                 elif path == '/api/state':
-                    json_reply(self, 200, {'version': '0.5.0b1', 'csrf': app.csrf,
+                    json_reply(self, 200, {'version': '0.6.0b1', 'csrf': app.csrf,
                                            'cameras': app.store.public(), 'status': app.manager.status(),
                                            'uptime_seconds': round(time.time() - app.started)}, head=head)
                 elif path == '/api/diagnostics':
@@ -88,6 +90,27 @@ def make_handler(app: Application, admin=False):
                         respond(self, 403, head=head)
                         return
                     json_reply(self, 200, {'events': app.manager.recent_events(50)}, head=head)
+                elif path == '/api/ai/config':
+                    if self.headers.get('X-Bridge-CSRF') != app.csrf:
+                        respond(self, 403, head=head)
+                        return
+                    json_reply(self, 200, {'config': app.ai.public_config(),
+                                           'status': app.ai.status()}, head=head)
+                elif path == '/api/ai/events':
+                    if self.headers.get('X-Bridge-CSRF') != app.csrf:
+                        respond(self, 403, head=head)
+                        return
+                    json_reply(self, 200, {'events': app.ai.events(50), 'summary': app.ai.summary()}, head=head)
+                elif path.startswith('/api/ai/snapshot/'):
+                    if self.headers.get('X-Bridge-CSRF') != app.csrf:
+                        respond(self, 403, head=head)
+                        return
+                    eid = path.removeprefix('/api/ai/snapshot/')
+                    photo = app.ai.image(eid) if EVENT_ID.fullmatch(eid) else None
+                    if photo is None:
+                        respond(self, 404, head=head)
+                    else:
+                        respond(self, 200, photo, 'image/jpeg', head=head)
                 elif path == '/api/endpoint-map':
                     if self.headers.get('X-Bridge-CSRF') != app.csrf:
                         respond(self, 403, head=head)
@@ -164,6 +187,21 @@ def make_handler(app: Application, admin=False):
                         camera = app.store.upsert(data)
                         app.manager.stop(camera['slug'])
                         json_reply(self, 200, {'ok': True, 'slug': camera['slug']})
+                    elif path == '/api/ai/config':
+                        json_reply(self, 200, {'config': app.ai.save_config(data, app.store.slugs()),
+                                               'status': app.ai.status()})
+                    elif path.startswith('/api/ai/feedback/'):
+                        eid = path.removeprefix('/api/ai/feedback/')
+                        if not EVENT_ID.fullmatch(eid):
+                            json_reply(self, 404, {'error': 'Event not found'})
+                            return
+                        decision = data.get('feedback') if isinstance(data, dict) else None
+                        if decision not in ('confirmed', 'false_positive', 'pending'):
+                            raise ValueError('Invalid feedback label')
+                        if app.ai.feedback(eid, decision):
+                            json_reply(self, 200, {'ok': True})
+                        else:
+                            json_reply(self, 404, {'error': 'Event not found'})
                     elif path == '/api/secret':
                         if data != {'confirm': 'I_UNDERSTAND'}:
                             json_reply(self, 400, {'error': 'Confirmation required'})
@@ -270,7 +308,7 @@ def serve():
     ui = ThreadingHTTPServer(('0.0.0.0', ui_port), make_handler(app, admin=True))
     media = ThreadingHTTPServer(('0.0.0.0', media_port), make_handler(app))
     threading.Thread(target=ui.serve_forever, daemon=True, name='admin-ui').start()
-    print(f'Alexa RTSP Bridge Pro v0.5.0b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
+    print(f'Alexa RTSP Bridge Pro v0.6.0b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
     try:
         media.serve_forever()
     finally:

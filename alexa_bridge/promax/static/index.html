@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Alexa RTSP Bridge Pro</title><link rel="stylesheet" href="static/app.css"></head>
-<body><div class="layout"><aside class="side"><div class="brand">◉ <span>Alexa RTSP<br><b>Bridge Pro</b></span></div><div class="nav selected">▣ &nbsp; Dashboard</div><div class="nav">◫ &nbsp; Cameras</div><button type="button" class="nav diag-trigger" id="diagnostics-open">◇ &nbsp; Diagnostics</button><button type="button" class="nav setup-trigger" id="setup-open">⚙ &nbsp; Install wizard</button><div class="sidefoot">v0.5 audio + recovery<br><span>Local camera gateway</span></div></aside>
+<body><div class="layout"><aside class="side"><div class="brand">◉ <span>Alexa RTSP<br><b>Bridge Pro</b></span></div><div class="nav selected">▣ &nbsp; Dashboard</div><div class="nav">◫ &nbsp; Cameras</div><button type="button" class="nav diag-trigger" id="diagnostics-open">◇ &nbsp; Diagnostics</button><button type="button" class="nav" id="ai-open">◎ &nbsp; AI Detector</button><button type="button" class="nav setup-trigger" id="setup-open">⚙ &nbsp; Install wizard</button><div class="sidefoot">v0.6 optional AI detector<br><span>Local camera gateway</span></div></aside>
 <main><header><div><div class="eyebrow">HOME ASSISTANT + FIRE TV</div><h1>Camera dashboard</h1><p>Manage RTSP feeds, check their status and prepare Alexa endpoints.</p></div><span class="pill" id="health">● Local gateway</span></header>
 <section class="metrics"><article class="metric"><span>Cameras</span><strong id="count">—</strong></article><article class="metric"><span>Streaming now</span><strong id="online">—</strong></article><article class="metric"><span>Runtime</span><strong id="uptime">—</strong></article><article class="metric"><span>Mode</span><strong>On demand</strong></article></section>
 <section class="card"><div class="cardhead"><div><h2>Your cameras</h2><p>Credentials stay in the private data directory.</p></div><button class="button primary" id="new">+ Add camera</button></div><div class="grid" id="cameras"><p>Loading cameras…</p></div></section>
@@ -11,6 +11,17 @@
   <div id="diagnostics-cameras" class="diag-cameras"></div>
   <h3>Recent events</h3><div id="diagnostics-events" class="diag-events"></div>
   <p class="small">CPU: 100% means one logical core. Automatic recovery applies only to requested streams; it uses cooldown between failures.</p>
+</section>
+<section class="card" id="ai-panel" hidden>
+  <div class="cardhead"><div><h2>Pro Max AI · detección local</h2><p>Experimental · AI OFF by default. The optional Docker worker does not modify Alexa video.</p></div><button type="button" class="button" id="ai-refresh">Refresh</button></div>
+  <div class="ai-status" id="ai-status">AI worker not configured.</div>
+  <div class="actions ai-options"><label><input type="checkbox" id="ai-global"> Enable AI detector</label><label>Interval (s)<input id="ai-interval" type="number" min="2" max="30" value="3"></label><label>Confidence<input id="ai-confidence" type="number" step="0.05" min="0.2" max="0.95" value="0.45"></label><button id="ai-save" class="button primary" type="button">Save AI settings</button></div>
+  <p class="small">Enable a maximum of two cameras during this CPU-safe beta. Prefer a 640×360 RTSP substream; if blank, AI uses the main camera RTSP stream. Credentials remain private.</p>
+  <div id="ai-cameras" class="diag-cameras"></div>
+  <h3>Detections · confirm or reject</h3>
+  <div id="ai-summary" class="ai-status">No events recorded.</div>
+  <div id="ai-events" class="ai-events"><p>Open AI Detector to load events.</p></div>
+  <p class="small">Photos and feedback are stored locally for 7 days by default. A confirmation labels the event; it does not automatically retrain the model.</p>
 </section>
 <section class="columns"><div class="card"><h2>How it connects</h2><div class="flow"><span>Alexa</span><i>→</i><span>Lambda</span><i>→</i><span>HTTPS HLS</span><i>→</i><span>FFmpeg</span></div><p>Each playlist request starts its camera. When nobody requests the playlist, the worker stops after the configured idle timeout.</p><p class="small">The snapshot endpoint is optional. Fire TV thumbnails depend on Amazon's client; JPEG support does not guarantee they appear.</p></div><div class="card"><h2>Alexa / Lambda setup</h2><p>Use the exact endpoint IDs reported by Home Assistant. Keep the signing key private.</p><div class="actions"><button class="button" id="map">Copy endpoint map</button><button class="button muted" id="key">Reveal signing key</button></div><div class="hint" id="lambda-info"></div></div></section>
 <footer>Independent open-source project · No cloud analytics · RTSP credentials are never returned by the UI</footer>

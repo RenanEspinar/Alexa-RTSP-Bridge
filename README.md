@@ -1,12 +1,12 @@
 # Alexa RTSP Bridge Pro
 
-**RTSP cameras on Home Assistant, Alexa and Fire TV — on-demand HLS, optional camera audio, diagnostics, automatic recovery and guided setup.**
+**RTSP cameras on Home Assistant, Alexa and Fire TV — on-demand HLS, optional AAC, diagnostics, recovery, guided installation and an opt-in OpenCV/YOLOX AI detector.**
 
 <p align="center"><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4"><img src="images/firetv_preview.gif" alt="Real Fire TV test of the original installation" width="760"></a></p>
 
-**[Audio, diagnostics & recovery (ES)](docs/AUDIO_DIAGNOSTICOS_ES.md)** · **[First-time beginner installation (ES)](docs/WIZARD_DESDE_CERO_ES.md)** · **[Beginner setup (EN)](docs/START_FROM_ZERO_EN.md)** · **[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
+**[Pro Max AI v0.6 guide (ES)](docs/PRO_AI_V06_ES.md)** · **[Audio, diagnostics & recovery (ES)](docs/AUDIO_DIAGNOSTICOS_ES.md)** · **[First-time beginner installation (ES)](docs/WIZARD_DESDE_CERO_ES.md)** · **[Beginner setup (EN)](docs/START_FROM_ZERO_EN.md)** · **[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
 
-> **Version:** `0.5.0b1` audio/diagnostics/recovery beta. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the guided-install wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
+> **Version:** `0.6.0b1` experimental optional AI beta. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the guided-install wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
 
 ## What it includes
 
@@ -24,6 +24,13 @@
 | Home Assistant custom integration / entities | **New in 0.3 preview; not yet tested in a live HA installation** |
 | Home Assistant OS app packaging | Experimental; requires HA OS testing |
 | Alexa Smart Home Lambda template | Provided; use a test skill before production |
+| Optional OpenCV + YOLOX-Nano + Norfair AI | **New 0.6; AI OFF by default; real RTSP detection pending field testing** |
+| Event snapshots and user confirmation | Implemented as a private admin feature; local tests passed |
+| Optional Home Assistant AI events/mobile notification | Implemented; requires private HA token and deployment test |
+
+## New in v0.6: optional AI detector
+
+The regular gateway remains unchanged for Alexa playback. To add person/vehicle/pet detection, use the separate `ai` Docker Compose profile and a SHA-256-pinned official YOLOX-Nano model; see **[step-by-step AI manual](docs/PRO_AI_V06_ES.md)**. The AI worker has no public port, analyzes up to two cameras in the CPU-safe beta, and stores evidence and confirmation feedback in the original private Docker volume. CPU/memory-limited to 0.75 core and 768 MiB. **There is no automatic Alexa TTS overlay in v0.6.**
 
 ## Installation choices
 

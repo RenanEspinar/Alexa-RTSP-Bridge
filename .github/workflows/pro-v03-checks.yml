@@ -1,4 +1,4 @@
-name: Pro v0.5 validation
+name: Pro v0.6 validation
 on:
   push:
     paths:
@@ -17,14 +17,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Install image-test dependencies
+        run: python -m pip install 'numpy>=1.26,<3' 'opencv-python-headless>=4.9,<5'
       - name: Validate Python, shell and JS
         run: |
           python -m compileall -q custom_components/alexa_rtsp_bridge alexa_bridge/promax
           node --check alexa_bridge/promax/static/app.js
           bash -n scripts/actualizar_existente.sh
-          bash -n scripts/publicar_v05_desde_ssh.sh
+          bash -n scripts/publicar_v06_desde_ssh.sh
+          bash -n scripts/instalar_ai_modelo.sh
+          bash -n scripts/restaurar_v06.sh
           python -m unittest discover -s tests -v
       - name: Validate Compose and Docker image
         run: |
           docker compose -f compose.pro.yml config -q
-          docker build -t alexa-rtsp-bridge-pro:v05 ./alexa_bridge
+          docker build -t alexa-rtsp-bridge-pro:v06 ./alexa_bridge
+          docker compose -f compose.pro.yml --profile ai config -q

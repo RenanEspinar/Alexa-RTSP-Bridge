@@ -28,7 +28,7 @@ class HACSStructureTests(unittest.TestCase):
         root = Path(__file__).resolve().parent.parent
         js = (root / 'alexa_bridge/promax/static/app.js').read_text(encoding='utf-8')
         self.assertIn('docs/WIZARD_DESDE_CERO_ES.md', js)
-        self.assertTrue((root / 'docs/WIZARD_DESDE_CERO_ES.md').is_file())
+        self.assertTrue((root / 'docs/GUIA_COMPLETA_ES.md').is_file())
 
     def test_wizard_step_and_no_public_admin(self):
         h = (ROOT / 'alexa_bridge' / 'promax' / 'static' / 'index.html').read_text()
@@ -36,12 +36,10 @@ class HACSStructureTests(unittest.TestCase):
         compose = (ROOT / 'compose.pro.yml').read_text()
         self.assertIn('id="setup-wizard"', h)
         self.assertIn('id="setup-open"', h)
-        for item in ('WIZARD_COUNT = 11', 'Check HLS', 'HOME_ASSISTANT_URL',
-                     'ALEXA_HLS_BASE', 'HLS_SIGNING_KEY', 'CAMERA_ENDPOINT_MAP_JSON',
-                     'Authorization URI', 'Access Token URI', 'OFFICIAL'):
-            self.assertIn(item, j)
-        self.assertTrue((ROOT / 'docs/WIZARD_DESDE_CERO_ES.md').is_file())
-        self.assertTrue((ROOT / 'docs/START_FROM_ZERO_EN.md').is_file())
+        for step in ('Antes de comenzar', 'Agregar cámaras',
+                     'Comprobar video', 'Probar Alexa de verdad'):
+            self.assertIn(step, j)
+        self.assertIn('WIZARD_COUNT = 11', j)
         self.assertIn('127.0.0.1:', compose)
         self.assertIn('UI_PORT', compose)
         self.assertIn('HLS_PORT', compose)

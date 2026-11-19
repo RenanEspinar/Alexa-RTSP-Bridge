@@ -25,5 +25,33 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+  ai:
+    profiles: ["ai"]
+    build:
+      context: ./alexa_bridge
+      dockerfile: Dockerfile.ai
+    container_name: alexa_rtsp_bridge_pro_ai
+    restart: unless-stopped
+    environment:
+      DATA_DIR: /data
+      AI_HA_URL: ${AI_HA_URL:-}
+      AI_HA_TOKEN: ${AI_HA_TOKEN:-}
+      AI_HA_NOTIFY_SERVICE: ${AI_HA_NOTIFY_SERVICE:-}
+    volumes:
+      - bridge_pro_data:/data
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    cpus: 0.75
+    mem_limit: 768m
+    pids_limit: 128
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,time; p=json.load(open('/data/ai/status.json')); assert time.time()-p['epoch']<45"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
 volumes:
   bridge_pro_data:

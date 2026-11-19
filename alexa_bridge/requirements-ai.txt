@@ -1,0 +1,4 @@
+numpy>=1.26,<3
+opencv-python-headless>=4.9,<5
+onnxruntime>=1.19,<2
+norfair>=2.2,<3

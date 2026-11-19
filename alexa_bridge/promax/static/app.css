@@ -51,3 +51,15 @@
 .diag-events{max-height:235px;overflow:auto;background:#0b1828;padding:10px 14px;border-radius:9px}
 .diag-events p{font-family:ui-monospace,monospace;font-size:11px;margin:5px 0;overflow-wrap:anywhere}
 @media(max-width:700px){.diag-cameras{grid-template-columns:1fr}}
+
+/* Pro Max AI events are intentionally simple and responsive. */
+.ai-options {align-items:center;flex-wrap:wrap;margin:14px 0}
+.ai-options input[type="number"] {width:76px;margin-left:8px}
+.ai-status {font-size:.9rem;padding:12px 14px;border:1px solid var(--border,#253348);border-radius:10px;margin:10px 0}
+.ai-events {display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px;margin:12px 0}
+.ai-event {border:1px solid var(--border,#253348);border-radius:12px;padding:12px;min-width:0}
+.ai-event .actions {display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ai-event span {font-size:.75rem;opacity:.7}
+.ai-preview {width:100%;max-height:220px;object-fit:contain;border-radius:8px;margin-top:8px}
+#ai-cameras input[type="password"] {display:block;width:100%;min-width:0;margin-top:5px}
+#ai-cameras .diag-camera {margin:10px 0}

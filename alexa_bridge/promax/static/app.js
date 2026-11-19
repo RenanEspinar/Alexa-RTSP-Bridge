@@ -399,3 +399,82 @@ $('diagnostics-open').onclick=()=>{
 };
 $('diag-refresh').onclick=loadDiagnostics;
 setInterval(()=>{if(diagActive)loadDiagnostics();},15000);
+
+// Optional AI detector: all requests remain behind the admin/CSRF surface.
+let aiActive=false;
+const aiNode=(tag, value, cls='')=>{
+  const n=document.createElement(tag);n.textContent=value;if(cls)n.className=cls;return n;
+};
+async function loadAI(){
+  if(!aiActive)return;
+  const status=$('ai-status');
+  try{
+    const data=await api('api/ai/config');
+    const cfg=data.config||{};const worker=data.status||{};
+    status.textContent=`Worker: ${worker.state||'unknown'} · ${worker.healthy?'heartbeat OK':'offline / no heartbeat'} · Model: ${worker.model_loaded?'loaded':'not loaded'} · Events: ${worker.detections||0}`+(worker.message?' · '+worker.message:'');
+    $('ai-global').checked=!!cfg.enabled;
+    $('ai-interval').value=cfg.interval_seconds||3;
+    $('ai-confidence').value=cfg.confidence||0.45;
+    const cameras=$('ai-cameras');cameras.replaceChildren();
+    state.cameras.forEach(cam=>{
+      const conf=(cfg.cameras||{})[cam.slug]||{};
+      const card=aiNode('article','','diag-camera');
+      card.append(aiNode('strong',cam.name));
+      const wrap=aiNode('div','','actions');
+      const label=aiNode('label',' Analyze this camera ');
+      const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!conf.enabled;label.prepend(cb);
+      wrap.append(label);
+      const subLabel=aiNode('label','AI RTSP substream (optional; stored privately)');
+      const input=document.createElement('input');input.type='password';input.autocomplete='new-password';
+      input.placeholder=conf.substream_configured?'Substream saved — blank keeps it':'rtsp://camera:554/substream';
+      subLabel.append(input);card.append(wrap,subLabel);
+      const controls=aiNode('div','','actions');
+      controls.append(button('Save camera AI',async()=>{
+        const payload={camera:{slug:cam.slug,enabled:cb.checked}};
+        if(input.value.trim())payload.camera.substream=input.value.trim();
+        try{await api('api/ai/config','POST',payload);toast('AI camera saved');loadAI();}catch(e){toast(e.message);}
+      }));
+      controls.append(button('Clear substream',async()=>{
+        if(!confirm('Use the original RTSP stream for AI on '+cam.name+'?'))return;
+        try{await api('api/ai/config','POST',{camera:{slug:cam.slug,substream:''}});loadAI();}catch(e){toast(e.message);}
+      }));
+      card.append(controls);cameras.append(card);
+    });
+    const events=$('ai-events');events.replaceChildren();
+    const dataEvents=await api('api/ai/events');
+    const summary=dataEvents.summary||{};
+    const labels=Object.entries(summary.categories||{}).map(([name,n])=>name+': '+n).join(' · ');
+    $('ai-summary').textContent=`Last 24h: ${summary.total||0} events · Confirmed ${summary.feedback?.confirmed||0} · False alarms ${summary.feedback?.false_positive||0}`+(labels?' · '+labels:'');
+    if(!(dataEvents.events||[]).length)events.append(aiNode('p','No detections yet. Enable the AI worker and one camera.'));
+    (dataEvents.events||[]).forEach(ev=>{
+      const card=aiNode('article','','ai-event');
+      const top=aiNode('div','','actions');
+      top.append(aiNode('b',`${ev.category.toUpperCase()} · ${ev.camera} · ${Math.round(ev.confidence*100)}%`));
+      top.append(aiNode('span',ev.created_at+' · '+ev.feedback));card.append(top);
+      const img=document.createElement('img');img.alt=`${ev.category} detected at ${ev.camera}`;
+      img.className='ai-preview';img.loading='lazy';
+      fetch('api/ai/snapshot/'+ev.id,{headers:{'X-Bridge-CSRF':state.csrf}})
+        .then(r=>{if(!r.ok)throw new Error('No image');return r.blob();})
+        .then(b=>{const url=URL.createObjectURL(b);img.src=url;img.onload=()=>URL.revokeObjectURL(url);})
+        .catch(()=>{img.alt='Snapshot unavailable';});
+      card.append(img);
+      const actions=aiNode('div','','actions');
+      for(const [key,title] of [['confirmed','✓ Correct'],['false_positive','✕ False positive'],['pending','Undo']]){
+        actions.append(button(title,async()=>{
+          try{await api('api/ai/feedback/'+ev.id,'POST',{feedback:key});loadAI();}catch(e){toast(e.message);}
+        }));
+      }
+      card.append(actions);events.append(card);
+    });
+  }catch(e){status.textContent='AI unavailable: '+e.message;}
+}
+$('ai-open').onclick=()=>{
+  aiActive=!aiActive;$('ai-panel').hidden=!aiActive;
+  if(aiActive){$('ai-panel').scrollIntoView({behavior:'smooth'});loadAI();}
+};
+$('ai-refresh').onclick=loadAI;
+$('ai-save').onclick=async()=>{
+  const interval=Number($('ai-interval').value),confidence=Number($('ai-confidence').value);
+  try{await api('api/ai/config','POST',{enabled:$('ai-global').checked,interval_seconds:interval,confidence});toast('AI settings updated');loadAI();}catch(e){toast(e.message);}
+};
+setInterval(()=>{if(aiActive && !$('ai-panel').contains(document.activeElement))loadAI();},25000);

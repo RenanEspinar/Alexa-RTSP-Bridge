@@ -1,3 +1,13 @@
+## 0.6.0b1 — Opt-in Pro Max AI (experimental)
+
+- Separate, resource-limited Docker AI service, disabled unless profile `ai` is started.
+- OpenCV motion gating, official YOLOX-Nano COCO ONNX model, Norfair tracked object events.
+- Private JPEG evidence and feedback database, configurable per-camera settings, retention.
+- Optional Home Assistant event notifications (requires explicit private token).
+- Admin-only CSRF-protected AI panel and API, no public HLS AI endpoint.
+- No change to Alexa Lambda, signatures, audio and stream algorithms.
+- 41 regression and AI security tests on reconstructed source executed locally; model playback and field accuracy require testing.
+
 ## v0.5.0b1 — Opt-in audio, diagnostics and recovery (preview)
 
 - AAC microphone audio can be switched on per camera; OFF remains the default.
