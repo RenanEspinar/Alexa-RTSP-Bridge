@@ -17,7 +17,7 @@ docker compose --env-file .env.pro -f compose.pro.yml config -q
 echo '=== PUERTOS EXISTENTES ==='
 grep -E '^(UI_PORT|HLS_PORT|IDLE_TIMEOUT|SNAPSHOT_TTL)=' .env.pro | sed -E 's/(KEY|TOKEN|PASSWORD|SECRET)=.*/\1=<REDACTED>/' || true
 if [[ "$MODE" == '--check' ]]; then echo 'Diagnóstico correcto. Repite con --apply para actualizar.'; exit 0; fi
-BACKUP="$HOME/alexa-promax-backups/$(date -u +%Y%m%dT%H%M%SZ)-pre-v03"
+BACKUP="$HOME/alexa-promax-backups/$(date -u +%Y%m%dT%H%M%SZ)-pre-v04"
 mkdir -p "$BACKUP"; chmod 700 "$BACKUP"
 cp -a "$APP/alexa_bridge" "$BACKUP/alexa_bridge"
 cp -a "$APP/compose.pro.yml" "$BACKUP/compose.pro.yml"
@@ -38,7 +38,7 @@ for i in $(seq 1 30); do
      if python3 - "$BACKUP/state-after.json" <<'PY2'
 import json,sys
 with open(sys.argv[1]) as fh: j=json.load(fh)
-assert j.get('version') == '0.3.0b1', j.get('version')
+assert j.get('version') == '0.4.0b1', j.get('version')
 print('Versión:', j['version'], '| Cámaras conservadas:', len(j.get('cameras', [])))
 PY2
      then OK=1; break; fi

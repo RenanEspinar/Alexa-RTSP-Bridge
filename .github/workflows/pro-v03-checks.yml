@@ -1,4 +1,4 @@
-name: Pro v0.3 validation
+name: Pro v0.4 validation
 on:
   push:
     paths:

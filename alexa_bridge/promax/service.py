@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import threading
@@ -66,7 +67,7 @@ def make_handler(app: Application, admin=False):
                 elif path == '/static/app.js':
                     respond(self, 200, (STATIC / 'app.js').read_bytes(), 'application/javascript; charset=utf-8', head=head)
                 elif path == '/api/state':
-                    json_reply(self, 200, {'version': '0.3.0b1', 'csrf': app.csrf,
+                    json_reply(self, 200, {'version': '0.4.0b1', 'csrf': app.csrf,
                                            'cameras': app.store.public(), 'status': app.manager.status(),
                                            'uptime_seconds': round(time.time() - app.started)}, head=head)
                 elif path == '/api/endpoint-map':
@@ -160,6 +161,32 @@ def make_handler(app: Application, admin=False):
                         json_reply(self, 200, {'codec': info.get('codec_name'),
                                                'profile': info.get('profile'), 'width': info.get('width'),
                                                'height': info.get('height'), 'recommended_mode': select_mode({**camera, 'mode': 'auto'}, info)})
+                    elif path.startswith('/api/check-hls/'):
+                        # Local self-test: media never leaves the private admin response.
+                        slug = path.removeprefix('/api/check-hls/')
+                        if not SLUG.fullmatch(slug) or not app.store.get(slug):
+                            json_reply(self, 404, {'error': 'Camera not found'})
+                            return
+                        started = time.monotonic()
+                        playlist = app.manager.request(slug)
+                        deadline = started + 22
+                        while time.monotonic() < deadline:
+                            if playlist.is_file() and playlist.stat().st_size > 0:
+                                contents = playlist.read_text(errors='replace')
+                                names = [line.strip() for line in contents.splitlines()
+                                         if re.fullmatch(r'segment_[0-9]+\.ts', line.strip())]
+                                for name in reversed(names):
+                                    segment = playlist.parent / name
+                                    if segment.is_file() and segment.stat().st_size >= 188:
+                                        with segment.open('rb') as stream:
+                                            valid_ts = stream.read(1) == b'\x47'
+                                        if valid_ts:
+                                            json_reply(self, 200, {
+                                                'ok': True, 'segment_bytes': segment.stat().st_size,
+                                                'elapsed_s': round(time.monotonic() - started, 3)})
+                                            return
+                            time.sleep(0.2)
+                        json_reply(self, 503, {'error': 'No valid MPEG-TS segment within 22 seconds'})
                     elif path.startswith('/api/sign/'):
                         slug = path.removeprefix('/api/sign/')
                         if not app.store.get(slug):
@@ -202,7 +229,7 @@ def serve():
     ui = ThreadingHTTPServer(('0.0.0.0', ui_port), make_handler(app, admin=True))
     media = ThreadingHTTPServer(('0.0.0.0', media_port), make_handler(app))
     threading.Thread(target=ui.serve_forever, daemon=True, name='admin-ui').start()
-    print(f'Alexa RTSP Bridge Pro v0.3.0b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
+    print(f'Alexa RTSP Bridge Pro v0.4.0b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
     try:
         media.serve_forever()
     finally:

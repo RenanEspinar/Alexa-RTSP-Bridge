@@ -26,7 +26,7 @@ bash scripts/actualizar_existente.sh --check
 bash scripts/actualizar_existente.sh --apply
 ```
 
-El script realiza respaldo del código original y del volumen del contenedor, conserva `.env.pro`, valida el Compose, reconstruye la imagen y revisa `GET /api/state` hasta que informe `0.3.0b1`. No ejecuta `down -v`.
+El script realiza respaldo del código original y del volumen del contenedor, conserva `.env.pro`, valida el Compose, reconstruye la imagen y revisa `GET /api/state` hasta que informe `0.4.0b1`. No ejecuta `down -v`.
 
 4. Abre **https://alexa-pro.chuma.website** y actualiza con Ctrl+F5. Aparecerá **Setup wizard** en el menú lateral, aun si ya había cámaras configuradas. Comprueba cámaras, `Probe`, `Snapshot`, y que `docker stats` vuelva a reposo tras la prueba.
 

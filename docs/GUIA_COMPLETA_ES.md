@@ -1,6 +1,6 @@
-# Manual completo — Alexa RTSP Bridge Pro 0.3 Beta
+# Manual completo — Alexa RTSP Bridge Pro 0.4 Beta
 
-**Ámbito:** Home Assistant Container sobre Ubuntu y Home Assistant OS. **Estado:** versión candidata; el wizard y la integración todavía requieren pruebas de aceptación en Home Assistant real.
+**Ámbito:** Home Assistant Container sobre Ubuntu y Home Assistant OS. **Estado:** versión candidata; el nuevo wizard y la integración todavía requieren pruebas de aceptación en Home Assistant real.
 
 ## 1. ¿Qué instala cada componente?
 
@@ -46,17 +46,13 @@ Abre `http://127.0.0.1:18099` desde el propio Ubuntu o mediante túnel SSH. La a
 
 No clones el proyecto encima de la carpeta en producción. Utiliza [el procedimiento de actualización](MIGRAR_DESDE_V02.md), que preserva `compose.pro.yml`, `.env.pro`, los puertos y el volumen Docker de configuración.
 
-## 4. Asistente de instalación — 4 pasos
+## 4. Asistente de instalación — 11 pasos
 
-**Paso 1 — Bienvenida y arquitectura.** Comprueba que el gateway se está ejecutando y comprende qué partes son locales y cuáles viven en AWS/Cloudflare.
+Abre **Install wizard** en el panel. Está preparado para usuarios que no tienen cuenta AWS, Skill ni túnel; las 11 etapas son: bienvenida y requisitos, agregar cámaras, verificar RTSP/JPEG/HLS, preparar Home Assistant, HTTPS/Cloudflare, crear Skill, crear Lambda, configurar sus variables, vincular OAuth, probar Alexa y revisar pendientes.
 
-**Paso 2 — Cámaras.** Pulsa *Add a camera* y configura: Camera ID (`[a-z][a-z0-9_]*`), nombre visible, URL `rtsp://usuario:clave@IP:554/ruta`, Alexa endpoint ID (solo si conoces el identificador exacto), `Video mode: Auto`, FPS, tamaño y bitrate. Un ejemplo de perfil de transcodificación es 960 × 540, 15 FPS y 1000 kbit/s.
+Incluye enlaces oficiales, instrucciones copiables y un registro de pasos completados **manualmente** en el navegador. El wizard no almacena credenciales de AWS, contraseñas Amazon ni tokens de Cloudflare. La creación de cuentas y permisos externos requiere que el usuario entre en las consolas oficiales.
 
-**Paso 3 — Diagnóstico.** Pulsa *Probe* para obtener códec/perfil, *Snapshot* para una imagen JPEG y *Test HLS* para un enlace HMAC temporal. El diagnóstico de conectividad no garantiza reproducción en Alexa.
-
-**Paso 4 — Alexa y HTTPS.** Sigue las instrucciones para configurar una ruta HTTPS accesible al relay de Amazon y preparar la Lambda de una **skill de prueba**. El wizard **no crea la skill ni configura tu AWS**.
-
-Si ya tienes cámaras, abre **Setup wizard** en el menú lateral. Puedes continuar utilizando las cámaras existentes.
+**Lee [INSTALACIÓN DESDE CERO PARA PRINCIPIANTES](WIZARD_DESDE_CERO_ES.md)** para el procedimiento completo, campos exactos, configuraciones de Alexa, OAuth, Lambda, Cloudflare y diagnóstico.
 
 ## 5. Configuración de video
 

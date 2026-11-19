@@ -4,9 +4,9 @@
 
 <p align="center"><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4"><img src="images/firetv_preview.gif" alt="Real Fire TV test of the original installation" width="760"></a></p>
 
-**[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
+**[First-time beginner installation (ES)](docs/WIZARD_DESDE_CERO_ES.md)** · **[Beginner setup (EN)](docs/START_FROM_ZERO_EN.md)** · **[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
 
-> **Version:** `0.3.0b1` preview. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the 0.3 wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
+> **Version:** `0.4.0b1` guided-install beta. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the guided-install wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
 
 ## What it includes
 
@@ -17,14 +17,14 @@
 | Camera management dashboard / RTSP probe / JPEG snapshots | Implemented; tested on Ubuntu |
 | Automatic H.264 compatible copy or transcoding | Implemented; reported trial used **transcode** |
 | Signed HLS playlist, segment and snapshot URLs | Implemented; local automated tests |
-| 4-step setup wizard | **New in 0.3 preview; needs browser acceptance testing** |
+| 11-step guided installation wizard | **New in 0.4 beta; local logic tested, end-to-end Alexa setup still unverified** |
 | Home Assistant custom integration / entities | **New in 0.3 preview; not yet tested in a live HA installation** |
 | Home Assistant OS app packaging | Experimental; requires HA OS testing |
 | Alexa Smart Home Lambda template | Provided; use a test skill before production |
 
 ## Installation choices
 
-**Home Assistant Container / Ubuntu Docker:** run the `alexa_bridge` gateway using `compose.pro.yml`, then install the optional Home Assistant integration. This is the method used on the author's server. The wizard is already inside the gateway web panel.
+**Home Assistant Container / Ubuntu Docker:** run the `alexa_bridge` gateway using `compose.pro.yml`, then install the optional Home Assistant integration. This is the method used on the author's server. The 11-step guided installation wizard is inside the gateway web panel and links to official Amazon, AWS, Cloudflare and Home Assistant documentation.
 
 **Home Assistant OS:** the `alexa_bridge/` folder is a Home Assistant app/add-on candidate. The app and its HA integration are separate; verify the HA OS packaging before a public release.
 
@@ -75,6 +75,10 @@ At eight channels, average time to the first TS segment was **11.474 s**; proces
 ![Measured CPU by concurrency](benchmarks/2026-11-19/figuras/cpu_vs_concurrencia.png)
 
 [**Complete measured report**](docs/RENDIMIENTO_EXPERIMENTAL.md) · [**Anonymized CSV and reproducible analysis**](benchmarks/2026-11-19/) · [**Benchmark script**](tools/benchmark_sostenido.py)
+
+## Beginner installation
+
+Open **Install wizard** in the gateway dashboard. The 11 stages cover prerequisites, adding a camera, testing RTSP/JPEG/HLS, Home Assistant, Cloudflare, Skill creation, Lambda, environment variables, OAuth, actual Alexa playback and final checks. The UI gives official links and copyable values; it **does not automatically create AWS or Amazon accounts**, and completion checkboxes are manual. Read [Español: desde cero](docs/WIZARD_DESDE_CERO_ES.md) or [English: first-time setup](docs/START_FROM_ZERO_EN.md).
 
 ## Manuals and support
 
