@@ -8,6 +8,18 @@
 Alexa RTSP Bridge
 </h1>
 
+<!-- FIRE TV DEMO: BEGIN -->
+<p align="center">
+  <a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4">
+    <img src="images/firetv_preview.gif" width="760" alt="Animated real Fire TV demonstration of Alexa RTSP Bridge" />
+  </a>
+</p>
+<p align="center">
+  <b><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4">▶ Watch real Fire TV demonstration — 1080p, 20.7 seconds</a></b>
+</p>
+<p align="center"><sub>The animated GIF is accelerated 1.6×. Full video shows the author's existing live installation; experimental RC1 is not independently validated.</sub></p>
+<!-- FIRE TV DEMO: END -->
+
 <p align="center">
 Bridge any RTSP IP camera to Amazon Alexa using Home Assistant, AWS Lambda, FFmpeg, Docker and Cloudflare Tunnel.
 </p>
