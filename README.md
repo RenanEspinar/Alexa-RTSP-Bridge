@@ -1,3 +1,5 @@
+
+
 <p align="center">
   <img src="images/logo.png" width="250">
 </p>
@@ -161,7 +163,9 @@ Instead of trying to force Alexa to understand RTSP, this project converts RTSP 
 
 The video pipeline runs separately:
 
-```text
+```
+https://github.com/user-attachments/assets/5007e16d-6991-4f2c-b5f6-fee9a5c113f5
+
                         ┌────────────────────┐
                         │    RTSP Camera     │
                         └─────────┬──────────┘
