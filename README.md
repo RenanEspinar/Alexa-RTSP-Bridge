@@ -37,6 +37,13 @@ flowchart TD
     N --> A
 ```
 
+## Real Fire TV demonstration
+
+[Watch the 4K/60 FPS Fire TV demo](docs/media/FireTV_4K60_demo.mp4)
+
+This video demonstrates the author's working Fire TV installation.
+The reproducible RC1 deployment still requires independent validation.
+
 ## Quick navigation
 
 - **[Full installation walkthrough](docs/INSTALL.md)** — Ubuntu, Docker, multiple cameras, local checks, Cloudflare, Home Assistant and Alexa.
