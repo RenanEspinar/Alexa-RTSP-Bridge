@@ -1,3 +1,4 @@
+# Ejemplo mínimo del Nginx original. No instala el controlador ni FFmpeg.
 services:
   alexa-hls-nginx:
     image: nginx:alpine

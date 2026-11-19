@@ -1,32 +1,20 @@
-#!/bin/bash
-
-################################################################################
-#
-# Alexa RTSP Bridge
-#
-# Example FFmpeg launcher
-#
-# Replace the variables below with your own camera information.
-#
-################################################################################
+#!/usr/bin/env bash
+# Ejemplo antiguo para levantar una cámara FFmpeg a mano.
+# No es el controlador on-demand que uso en producción.
+# Para varias cámaras, mejor revisa la rama RC1.
 
 CAMERA_NAME="solario"
-
 RTSP_URL="rtsp://USERNAME:PASSWORD@192.168.1.100:554/Streaming/Channels/101"
-
 WIDTH=960
 HEIGHT=540
-
 FPS=15
-
 BITRATE=1000k
-
-################################################################################
 
 mkdir -p ~/alexa_hls/${CAMERA_NAME}
 
 docker rm -f ffmpeg_${CAMERA_NAME} 2>/dev/null
 
+# Aquí FFmpeg queda encendido; este script es solo una prueba manual.
 docker run -d \
   --name ffmpeg_${CAMERA_NAME} \
   --restart unless-stopped \
@@ -58,12 +46,4 @@ docker run -d \
   -hls_segment_filename "/hls/${CAMERA_NAME}/segment_%06d.ts" \
   "/hls/${CAMERA_NAME}/index.m3u8"
 
-echo ""
-echo "========================================="
-echo "Camera started successfully."
-echo ""
-echo "HLS Playlist:"
-echo ""
-echo "http://SERVER_IP:8090/${CAMERA_NAME}/index.m3u8"
-echo ""
-echo "========================================="
+echo "HLS: http://SERVER_IP:8090/${CAMERA_NAME}/index.m3u8"

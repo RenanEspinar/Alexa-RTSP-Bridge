@@ -1,11 +1,6 @@
-"""
-Alexa RTSP Bridge - AWS Lambda Smart Home Proxy
+"""Proxy de Alexa Smart Home a Home Assistant.
 
-This Lambda function forwards Alexa Smart Home directives to Home Assistant.
-For camera stream responses, it replaces the Home Assistant-generated HLS URL
-with an externally generated Alexa-compatible HLS URL.
-
-Repository: Alexa RTSP Bridge
+El HLS se sustituye solo en las respuestas de cÃ¡mara.
 """
 
 import json
@@ -95,8 +90,8 @@ def adjust_camera_stream_response(response_json):
             }
 
             LOGGER.info("Camera endpointId: %s", endpoint_id)
-            LOGGER.info("Old Home Assistant stream URI: %s", old_uri)
-            LOGGER.info("New Alexa-compatible HLS URI: %s", hls_uri)
+            LOGGER.debug("Home Assistant camera URI replaced")
+            LOGGER.debug("Alexa HLS URI configured")
 
     except Exception as exc:
         LOGGER.error("Error adjusting camera stream response: %s", exc)
@@ -106,7 +101,7 @@ def adjust_camera_stream_response(response_json):
 
 def lambda_handler(event, context):
     LOGGER.info("========== ALEXA DIRECTIVE RECEIVED ==========")
-    LOGGER.info(json.dumps(event, indent=2))
+    LOGGER.debug("Directive received")
 
     base_url = os.environ.get("BASE_URL")
     if not base_url:
@@ -200,7 +195,7 @@ def lambda_handler(event, context):
 
     LOGGER.info("========== HOME ASSISTANT RAW RESPONSE ==========")
     LOGGER.info("HTTP Status: %s", response.status)
-    LOGGER.info(ha_response_text)
+    LOGGER.debug("Home Assistant response received")
 
     if response.status >= 400:
         error_type = (
@@ -230,6 +225,6 @@ def lambda_handler(event, context):
         time.sleep(CAMERA_RESPONSE_DELAY_SECONDS)
 
     LOGGER.info("========== RETURNING RESPONSE TO ALEXA ==========")
-    LOGGER.info(json.dumps(parsed_response, indent=2))
+    LOGGER.debug("Alexa response ready")
 
     return parsed_response
