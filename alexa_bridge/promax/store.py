@@ -97,4 +97,6 @@ class Store:
 
     def endpoint_map(self):
         with self.lock:
-            return {c['alexa_endpoint_id']: slug for slug, c in self.cameras.items() if c['alexa_endpoint_id']}
+            return {c['alexa_endpoint_id']: (
+                {'slug': slug, 'audioCodec': 'AAC'} if c.get('audio_mode') == 'aac' else slug
+            ) for slug, c in self.cameras.items() if c['alexa_endpoint_id']}

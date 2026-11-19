@@ -1,6 +1,6 @@
 # Alexa RTSP Bridge Pro — instalación desde cero para principiantes
 
-**Versión:** 0.4.0b1, candidata a pruebas. **Objetivo:** abrir una cámara RTSP en Fire TV o Echo Show con la orden «Alexa, muéstrame [nombre]».
+**Versión:** 0.5.0b1, candidata a pruebas. **Objetivo:** abrir una cámara RTSP en Fire TV o Echo Show con la orden «Alexa, muéstrame [nombre]».
 
 Esta guía **no presupone** que tengas una Skill, AWS Lambda, Cloudflare Tunnel o conocimientos de programación. Separa los pasos que la aplicación puede ejecutar de aquellos en los que debes iniciar sesión y autorizar cambios en servicios externos. Los nombres de menús pueden cambiar; los enlaces oficiales se verificaron el **19 de noviembre de 2026**.
 
@@ -203,3 +203,8 @@ Consulta también los [issues del proyecto](https://github.com/RenanEspinar/Alex
 - https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html
 - https://developers.cloudflare.com/tunnel/get-started/
 - https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/self-hosted-public-app/
+
+
+## Opcional: micrófono de cámara y diagnósticos
+
+De manera predeterminada el sistema transmite **solo video**. En *Cameras → Edit* puedes cambiar a **AAC** cuando tu RTSP incluya audio. Prueba la cámara desde *Diagnostics → Probe A/V*, comprueba HLS y actualiza el mapa de Lambda. Para detectar problemas, *Diagnostics* muestra CPU/RAM, recuperaciones y un reinicio manual limitado a cámaras activas. Lee [Audio y diagnósticos](AUDIO_DIAGNOSTICOS_ES.md).

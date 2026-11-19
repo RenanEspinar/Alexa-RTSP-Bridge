@@ -1,12 +1,12 @@
 # Alexa RTSP Bridge Pro
 
-**RTSP cameras on Home Assistant, Alexa and Fire TV — on-demand HLS, camera dashboard and guided setup.**
+**RTSP cameras on Home Assistant, Alexa and Fire TV — on-demand HLS, optional camera audio, diagnostics, automatic recovery and guided setup.**
 
 <p align="center"><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4"><img src="images/firetv_preview.gif" alt="Real Fire TV test of the original installation" width="760"></a></p>
 
-**[First-time beginner installation (ES)](docs/WIZARD_DESDE_CERO_ES.md)** · **[Beginner setup (EN)](docs/START_FROM_ZERO_EN.md)** · **[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
+**[Audio, diagnostics & recovery (ES)](docs/AUDIO_DIAGNOSTICOS_ES.md)** · **[First-time beginner installation (ES)](docs/WIZARD_DESDE_CERO_ES.md)** · **[Beginner setup (EN)](docs/START_FROM_ZERO_EN.md)** · **[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
 
-> **Version:** `0.4.0b1` guided-install beta. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the guided-install wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
+> **Version:** `0.5.0b1` audio/diagnostics/recovery beta. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the guided-install wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
 
 ## What it includes
 
@@ -14,6 +14,9 @@
 |---|---|
 | RTSP → H.264/MPEG-TS HLS on demand | Implemented; Pro 0.2 tested with 8 RTSP channels |
 | Start/stop of FFmpeg on request/idle | Implemented; observed during the tests |
+| Camera audio: OFF by default, AAC on demand | **New 0.5; FFmpeg/Lambda integration unit-tested, Alexa device tests pending** |
+| Diagnostics: audio/video probe, local TS decode, CPU/RAM and events | **New 0.5; local tests passed** |
+| Recovery: frozen segment detection, exponential backoff, per-camera restart | **New 0.5; simulated tests passed, long-running field tests pending** |
 | Camera management dashboard / RTSP probe / JPEG snapshots | Implemented; tested on Ubuntu |
 | Automatic H.264 compatible copy or transcoding | Implemented; reported trial used **transcode** |
 | Signed HLS playlist, segment and snapshot URLs | Implemented; local automated tests |
@@ -91,3 +94,12 @@ Open **Install wizard** in the gateway dashboard. The 11 stages cover prerequisi
 - [Publish sources to GitHub](docs/PUBLICAR_EN_GITHUB.md).
 
 **License:** MIT. Community project by [Renan Espinar](https://github.com/RenanEspinar), not affiliated with Amazon, Home Assistant or Cloudflare. Report reproducible issues with sanitized logs only: [GitHub Issues](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/issues).
+
+
+## Audio and recovery (v0.5 preview)
+
+In **Cameras → Edit**, choose **Audio OFF** (default) or **AAC** for each camera. AAC requires an audio track on the camera's RTSP channel; **Probe A/V** in Diagnostics checks it. When the source has no audio, leave the setting OFF. After enabling AAC, copy the refreshed endpoint map into your *private* Lambda configuration and redeploy the test Lambda before using Alexa.
+
+The gateway checks playlist and segment freshness for active streams, restarts stalled workers after a cooldown, and records sanitized events. **Diagnostics** shows resource counters, start/recovery attempts, segment age, and a local TS decode test. Credentials and signed streaming URLs are excluded from those results.
+
+**Important:** disabling camera audio does not guarantee that music continues playing on Fire TV. Camera navigation and Alexa's media/audio focus can still interrupt other apps. The v0.5 features have not been compared experimentally with other bridges, and the published eight-camera CPU/RAM benchmark was measured on the older, video-only v0.2 build.

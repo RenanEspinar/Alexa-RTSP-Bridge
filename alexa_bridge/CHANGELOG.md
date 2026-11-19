@@ -1,3 +1,13 @@
+## v0.5.0b1 — Opt-in audio, diagnostics and recovery (preview)
+
+- AAC microphone audio can be switched on per camera; OFF remains the default.
+- Alexa Lambda maps AAC or NONE per camera (old string mappings still work).
+- Diagnostics show video/audio probe, local HLS decoding, container CPU/RAM, retry state and sanitized events.
+- Watchdog checks HLS segment freshness, restarts failed streams after bounded backoff, without affecting other cameras.
+- Manual restart for active streams; idle cameras remain stopped.
+- Data volume format is backward-compatible with 0.4.
+- This release has automated tests but has not yet been validated with real Fire TV audio playback or a multi-day endurance run.
+
 # Changes
 
 ## v0.4.0b1 (preview)

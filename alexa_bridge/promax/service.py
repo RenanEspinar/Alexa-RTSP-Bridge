@@ -10,7 +10,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
-from .media import Manager, inspect_source, select_mode
+from .media import Manager, inspect_source, inspect_audio_source, select_mode
+from .diagnostics import system_metrics, probe_camera, check_local_hls
 from .security import SLUG, make_path, verify_path
 from .store import Store
 
@@ -67,9 +68,26 @@ def make_handler(app: Application, admin=False):
                 elif path == '/static/app.js':
                     respond(self, 200, (STATIC / 'app.js').read_bytes(), 'application/javascript; charset=utf-8', head=head)
                 elif path == '/api/state':
-                    json_reply(self, 200, {'version': '0.4.0b1', 'csrf': app.csrf,
+                    json_reply(self, 200, {'version': '0.5.0b1', 'csrf': app.csrf,
                                            'cameras': app.store.public(), 'status': app.manager.status(),
                                            'uptime_seconds': round(time.time() - app.started)}, head=head)
+                elif path == '/api/diagnostics':
+                    if self.headers.get('X-Bridge-CSRF') != app.csrf:
+                        respond(self, 403, head=head)
+                        return
+                    status = app.manager.status()
+                    json_reply(self, 200, {
+                        'system': system_metrics(),
+                        'cameras': status,
+                        'active': sum(bool(v['running']) for v in status.values()),
+                        'watchdog_enabled': app.manager.watchdog_enabled,
+                        'events': app.manager.recent_events(20),
+                    }, head=head)
+                elif path == '/api/events':
+                    if self.headers.get('X-Bridge-CSRF') != app.csrf:
+                        respond(self, 403, head=head)
+                        return
+                    json_reply(self, 200, {'events': app.manager.recent_events(50)}, head=head)
                 elif path == '/api/endpoint-map':
                     if self.headers.get('X-Bridge-CSRF') != app.csrf:
                         respond(self, 403, head=head)
@@ -151,6 +169,27 @@ def make_handler(app: Application, admin=False):
                             json_reply(self, 400, {'error': 'Confirmation required'})
                             return
                         json_reply(self, 200, {'key': app.store.key.decode('ascii')})
+                    elif path.startswith('/api/diagnostics/hls/'):
+                        slug = path.removeprefix('/api/diagnostics/hls/')
+                        if not SLUG.fullmatch(slug) or not app.store.get(slug):
+                            json_reply(self, 404, {'error': 'Camera not found'})
+                            return
+                        json_reply(self, 200, check_local_hls(app.manager, slug))
+                    elif path.startswith('/api/diagnostics/camera/'):
+                        slug = path.removeprefix('/api/diagnostics/camera/')
+                        camera = app.store.get(slug) if SLUG.fullmatch(slug) else None
+                        if camera is None:
+                            json_reply(self, 404, {'error': 'Camera not found'})
+                            return
+                        json_reply(self, 200, probe_camera(camera))
+                    elif path.startswith('/api/restart/'):
+                        slug = path.removeprefix('/api/restart/')
+                        if not SLUG.fullmatch(slug) or not app.store.get(slug):
+                            json_reply(self, 404, {'error': 'Camera not found'})
+                            return
+                        restarted = app.manager.restart(slug)
+                        json_reply(self, 200, {'ok': True, 'restarted': restarted,
+                                              'detail': 'Idle cameras are not started by this command'})
                     elif path.startswith('/api/probe/'):
                         slug = path.removeprefix('/api/probe/')
                         camera = app.store.get(slug)
@@ -160,7 +199,9 @@ def make_handler(app: Application, admin=False):
                         info = inspect_source(camera['rtsp_url'])
                         json_reply(self, 200, {'codec': info.get('codec_name'),
                                                'profile': info.get('profile'), 'width': info.get('width'),
-                                               'height': info.get('height'), 'recommended_mode': select_mode({**camera, 'mode': 'auto'}, info)})
+                                               'height': info.get('height'),
+                                               'recommended_mode': select_mode({**camera, 'mode': 'auto'}, info),
+                                               'audio_mode': camera.get('audio_mode', 'off')})
                     elif path.startswith('/api/check-hls/'):
                         # Local self-test: media never leaves the private admin response.
                         slug = path.removeprefix('/api/check-hls/')
@@ -229,7 +270,7 @@ def serve():
     ui = ThreadingHTTPServer(('0.0.0.0', ui_port), make_handler(app, admin=True))
     media = ThreadingHTTPServer(('0.0.0.0', media_port), make_handler(app))
     threading.Thread(target=ui.serve_forever, daemon=True, name='admin-ui').start()
-    print(f'Alexa RTSP Bridge Pro v0.4.0b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
+    print(f'Alexa RTSP Bridge Pro v0.5.0b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
     try:
         media.serve_forever()
     finally:

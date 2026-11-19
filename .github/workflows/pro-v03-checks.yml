@@ -1,4 +1,4 @@
-name: Pro v0.4 validation
+name: Pro v0.5 validation
 on:
   push:
     paths:
@@ -22,8 +22,9 @@ jobs:
           python -m compileall -q custom_components/alexa_rtsp_bridge alexa_bridge/promax
           node --check alexa_bridge/promax/static/app.js
           bash -n scripts/actualizar_existente.sh
+          bash -n scripts/publicar_v05_desde_ssh.sh
           python -m unittest discover -s tests -v
       - name: Validate Compose and Docker image
         run: |
           docker compose -f compose.pro.yml config -q
-          docker build -t alexa-rtsp-bridge-pro:v03 ./alexa_bridge
+          docker build -t alexa-rtsp-bridge-pro:v05 ./alexa_bridge

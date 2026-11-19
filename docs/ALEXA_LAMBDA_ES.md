@@ -32,7 +32,7 @@ Documentación oficial: [Home Assistant Alexa Smart Home](https://www.home-assis
 | `HOME_ASSISTANT_URL` | URL HTTPS base de Home Assistant, sin `/api/...` |
 | `ALEXA_HLS_BASE` | URL HTTPS base del gateway firmado, sin ruta `/s/...` |
 | `HLS_SIGNING_KEY` | Misma clave HMAC privada que usa el gateway; no publicarla |
-| `CAMERA_ENDPOINT_MAP_JSON` | Objeto JSON `endpointId` → slug, por ejemplo `{"camera#ejemplo":"camara"}` solamente si coincide con tu descubrimiento real |
+| `CAMERA_ENDPOINT_MAP_JSON` | Objeto JSON `endpointId` → slug; para una cámara con audio AAC, `endpointId` → `{ "slug": "camara", "audioCodec": "AAC" }`. Confirma el ID real de descubrimiento. |
 
 4. En la UI de Pro Max, **Copy endpoint map** proporciona los pares configurados. Si el mapeo está vacío, confirma en la respuesta de descubrimiento Alexa los identificadores exactos y completa las cámaras. No confundir ID de Home Assistant con `endpointId`.
 5. En el panel, el botón **Reveal signing key** copia una credencial privada. Hazlo solo desde una sesión segura. La cadena de firma no debe aparecer en capturas ni en logs.
@@ -57,3 +57,19 @@ Documentación oficial: [Home Assistant Alexa Smart Home](https://www.home-assis
 | Skill no descubre cámara | No está expuesta o `endpointId` no corresponde |
 
 La Lambda incluida es un punto de partida verificable para una **skill propia**; los ajustes de account linking e IAM dependen de la región y de la consola de AWS, por lo que requieren validación actual antes de producción.
+
+
+## Audio opcional por cámara (v0.5)
+
+El panel genera una correspondencia compatible hacia atrás. Ejemplo **solo ilustrativo**:
+
+```json
+{
+  "camera#solario": "solario",
+  "camera#jardin": {"slug": "jardin", "audioCodec": "AAC"}
+}
+```
+
+El primer valor implica `audioCodec: NONE`. El segundo pide `AAC` a Lambda, que lo declara en la respuesta `CameraStreamController`. **Debe coincidir con el audio real del HLS**: antes de activarlo utiliza el diagnóstico `Probe A/V` y comprueba un segmento de video con AAC. El controlador no añade una pista de audio ficticia cuando la cámara no tiene micrófono.
+
+Si cambias Audio OFF → AAC, actualiza `CAMERA_ENDPOINT_MAP_JSON` en la Lambda de prueba, vuelve a desplegarla y realiza un ensayo en Fire TV. La presencia de audio **no asegura** que Fire TV conserve la música de otra app; eso depende de las políticas de foco de audio del dispositivo.

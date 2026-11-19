@@ -40,3 +40,14 @@
 .wizard-content .wizard-summary{font-size:13px;line-height:2;color:#b9d8eb}
 #setup-wizard #wizard-language{width:116px;margin:0 10px 0 auto;padding:8px;font-size:12px}
 @media(max-width:650px){.wizard-content .wizard-copy{flex-direction:column;align-items:stretch}.wizard-content .wizard-copy code{min-width:0}}
+
+/* v0.5 diagnostics panel. */
+.diag-trigger{display:block;width:100%;text-align:left;font:inherit;border:0;background:transparent;cursor:pointer;margin-top:5px}
+.diag-trigger:hover{background:#1a354f;color:#e9f6ff}
+.diag-summary{padding:13px;border:1px solid #285076;background:#102c44;border-radius:9px;font-size:13px;margin-bottom:16px}
+.diag-cameras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.diag-camera{border:1px solid #2a3b53;background:#0b1828;border-radius:11px;padding:16px}
+.diag-camera strong{font-size:13px}.diag-camera p{margin:8px 0}.diag-camera .diag-warning{color:#f3b78c}
+.diag-events{max-height:235px;overflow:auto;background:#0b1828;padding:10px 14px;border-radius:9px}
+.diag-events p{font-family:ui-monospace,monospace;font-size:11px;margin:5px 0;overflow-wrap:anywhere}
+@media(max-width:700px){.diag-cameras{grid-template-columns:1fr}}

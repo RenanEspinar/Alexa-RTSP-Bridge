@@ -1,6 +1,6 @@
 # Alexa RTSP Bridge Pro — first-time installation
 
-**Preview v0.4.0b1.** This guide assumes you have **never created an Alexa Smart Home skill, AWS Lambda function or Cloudflare Tunnel**. The guided setup in the dashboard offers 11 steps, with links and copyable values. It doesn't ask for your AWS credentials, Amazon password or Cloudflare token.
+**Preview v0.5.0b1.** This guide assumes you have **never created an Alexa Smart Home skill, AWS Lambda function or Cloudflare Tunnel**. The guided setup in the dashboard offers 11 steps, with links and copyable values. It doesn't ask for your AWS credentials, Amazon password or Cloudflare token.
 
 The local RTSP/HLS gateway has been exercised with eight real NVR channels on a previous build. The **new wizard and Alexa integration require real end-to-end acceptance testing**; don't call an installation validated based on a snapshot alone.
 
@@ -15,3 +15,8 @@ The local RTSP/HLS gateway has been exercised with eight real NVR channels on a 
 9. **Test on the Alexa app/device.** Alexa app → Skills & Games → Your Skills → Dev → enable the Skill and log into HA. Discover devices. Ask Fire TV/Echo Show to display one camera and confirm live, moving video. Review Lambda logs if discovery works but video doesn't.
 
 For screenshots, exact field values, error cases, region-specific Client IDs, security rules and troubleshooting, see the [detailed Spanish beginner manual](WIZARD_DESDE_CERO_ES.md) and [Home Assistant’s official Alexa instructions](https://www.home-assistant.io/integrations/alexa.smart_home/).
+
+
+### Optional camera sound and self-recovery
+
+Audio is OFF by default. Set **Audio AAC** per camera only when the RTSP feed has an audio track. After changing it, update the Lambda endpoint mapping. Diagnostics shows A/V source probing, local TS decode, process health and recovery history. Disabling camera audio does not promise uninterrupted music playback on Fire TV; Alexa handles audio focus. See [Audio/Diagnostics (Spanish)](AUDIO_DIAGNOSTICOS_ES.md).

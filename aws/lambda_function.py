@@ -82,8 +82,18 @@ def lambda_handler(event, context):
     response_event = ha_result.get('event') or {}
     response_header = response_event.get('header') or {}
     if response_header.get('namespace') == 'Alexa.CameraStreamController' and response_header.get('name') == 'Response':
-        slug = mappings.get((response_event.get('endpoint') or {}).get('endpointId'))
+        camera_mapping = mappings.get((response_event.get('endpoint') or {}).get('endpointId'))
+        # Legacy maps use endpointId -> slug. New maps may include audioCodec.
+        if isinstance(camera_mapping, str):
+            slug, audio_codec = camera_mapping, 'NONE'
+        elif isinstance(camera_mapping, dict):
+            slug = camera_mapping.get('slug')
+            audio_codec = camera_mapping.get('audioCodec', 'NONE')
+        else:
+            slug, audio_codec = None, 'NONE'
         if slug:
+            if audio_codec not in ('NONE', 'AAC'):
+                return error_response(message_id, 'INTERNAL_ERROR', 'Invalid audio codec setting')
             try:
                 uri = signed_uri(hls_base, slug, secret)
             except ValueError:
@@ -96,7 +106,7 @@ def lambda_handler(event, context):
                         'protocol': 'HLS',
                         'authorizationType': 'NONE',
                         'videoCodec': 'H264',
-                        'audioCodec': 'NONE',
+                        'audioCodec': audio_codec,
                         'resolution': {'width': 960, 'height': 540},
                     })
     return ha_result

@@ -61,6 +61,9 @@ def check_camera(data, *, allow_no_url=False):
     mode = data.get('mode', 'auto')
     if mode not in ('auto', 'copy', 'transcode'):
         raise ValueError('Mode must be auto, copy or transcode')
+    audio_mode = data.get('audio_mode', 'off')
+    if audio_mode not in ('off', 'aac'):
+        raise ValueError('Audio mode must be off or aac')
     name = data.get('name', slug)
     if not isinstance(name, str) or not 1 <= len(name.strip()) <= 50 or any(c in name for c in '<>\r\n'):
         raise ValueError('Invalid camera name')
@@ -84,4 +87,5 @@ def check_camera(data, *, allow_no_url=False):
         'slug': slug, 'name': name.strip(), 'rtsp_url': url,
         'mode': mode, 'width': width, 'height': height,
         'fps': fps, 'bitrate_kbps': bitrate, 'alexa_endpoint_id': endpoint,
+        'audio_mode': audio_mode,
     }

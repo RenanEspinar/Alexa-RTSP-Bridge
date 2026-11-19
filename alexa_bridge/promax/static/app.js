@@ -30,7 +30,7 @@ function draw() {
     const title=document.createElement('div');title.className='cam-title';
     const name=document.createElement('b');name.textContent=cam.name;
     const badge=document.createElement('span');badge.className='badge'+(st.running?' online':'');badge.textContent=st.running?'● STREAMING':'○ IDLE';title.append(name,badge);
-    const meta=document.createElement('p');meta.className='meta';meta.textContent=cam.slug+' · '+cam.mode.toUpperCase()+(st.mode?' → '+st.mode:'')+' · '+(st.starts||0)+' starts';
+    const meta=document.createElement('p');meta.className='meta';meta.textContent=cam.slug+' · '+cam.mode.toUpperCase()+(st.mode?' → '+st.mode:'')+' · AUDIO '+(cam.audio_mode==='aac'?'AAC':'OFF')+' · '+(st.starts||0)+' starts' + (st.recoveries ? ' · '+st.recoveries+' recoveries' : '');
     const actions=document.createElement('div');actions.className='actions';
     actions.append(
       button('Snapshot',async()=>{try{
@@ -57,7 +57,7 @@ function draw() {
   });
 }
 function edit(cam=null){const form=$('camera-form');form.reset();$('form-error').textContent='';
-  if(cam){for(const k of ['slug','name','alexa_endpoint_id','mode','fps','width','height','bitrate_kbps']) form.elements[k].value=cam[k];form.elements.slug.readOnly=true;}
+  if(cam){for(const k of ['slug','name','alexa_endpoint_id','mode','audio_mode','fps','width','height','bitrate_kbps']) form.elements[k].value=cam[k];form.elements.slug.readOnly=true;}
   else form.elements.slug.readOnly=false;
   $('editor').showModal();
 }
@@ -65,14 +65,14 @@ $('new').onclick=()=>edit();$('close').onclick=()=>closeCameraEditor();$('cancel
 function closeCameraEditor(){ $('editor').close(); if(wizardCameraEditor){wizardCameraEditor=false;wizardStep=1;openWizard();} }
 
 $('camera-form').onsubmit=async event=>{event.preventDefault();const f=event.target;const obj={};
-  for(const k of ['slug','name','alexa_endpoint_id','mode','rtsp_url']) obj[k]=f.elements[k].value;
+  for(const k of ['slug','name','alexa_endpoint_id','mode','audio_mode','rtsp_url']) obj[k]=f.elements[k].value;
   for(const k of ['fps','width','height','bitrate_kbps']) obj[k]=Number(f.elements[k].value);
   try{await api('api/cameras','POST',obj);$('editor').close();toast('Camera saved');await refresh();
     if(wizardCameraEditor){wizardCameraEditor=false;wizardStep=2;openWizard();}
   }
   catch(e){$('form-error').textContent=e.message;}
 };
-$('map').onclick=async()=>{try{const map=await api('api/endpoint-map');await navigator.clipboard.writeText(JSON.stringify(map));toast('Endpoint map copied. Paste it into CAMERA_ENDPOINT_MAP_JSON.');}catch(e){toast(e.message);}};
+$('map').onclick=async()=>{try{const map=await api('api/endpoint-map');await navigator.clipboard.writeText(JSON.stringify(map));toast('Endpoint map copied. Includes AAC only for audio-enabled cameras. Update your private Lambda variables.');}catch(e){toast(e.message);}};
 $('key').onclick=async()=>{if(!confirm('The signing key grants temporary access to your streams. Only copy it into your private Lambda configuration. Continue?'))return;
   try{const val=await api('api/secret','POST',{confirm:'I_UNDERSTAND'});await navigator.clipboard.writeText(val.key);toast('Private signing key copied. Do not share this clipboard content.');}catch(e){toast(e.message);}};
 
@@ -190,8 +190,9 @@ function wStepContent(){
     case 1: {
       wh(w('Agrega tu primera cámara RTSP','Add your first RTSP camera'));
       wp(w(`Cámaras registradas: ${state.cameras.length}. Solo necesitas una para continuar.`,`${state.cameras.length} cameras already registered. You only need one to continue.`),'setup-ok');
-      wlist(wizardData.lang==='en' ? ['Find the RTSP URL in your camera or NVR settings.','Enter its private IP, user, password and stream path in Add camera.','Leave Video mode on Auto; save the camera.'] : ['Busca la URL RTSP en tu cámara o grabador NVR.','Pulsa Agregar cámara e introduce la IP local, usuario, contraseña y canal.','Deja Video mode en Auto y guarda.']);
+      wlist(wizardData.lang==='en' ? ['Find the RTSP URL in your camera or NVR settings.','Enter its private IP, user, password and stream path in Add camera.','Leave Video mode on Auto and Audio OFF initially; save the camera.'] : ['Busca la URL RTSP en tu cámara o grabador NVR.','Pulsa Agregar cámara e introduce la IP local, usuario, contraseña y canal.','Deja Video mode en Auto y Audio OFF al principio. Activa AAC solo si la cámara tiene micrófono.']);
       wactions().append(wbutton(w('+ Agregar cámara','+ Add camera'),()=>{$('setup-wizard').close();wizardCameraEditor=true;edit();}));
+      wp(w('Audio OFF transmite solo video. Audio AAC añade el micrófono; puede requerir actualizar Lambda y no garantiza que la música de Fire TV siga sonando.','Audio OFF carries video only. AAC adds microphone sound but requires Lambda matching and cannot guarantee Fire TV music keeps playing.'),'setup-note');
       wp(w('Las contraseñas RTSP quedan en el volumen privado del gateway. Nunca las pegues en GitHub ni en un comentario público.','RTSP credentials stay in the private gateway volume. Never post them on GitHub or public forums.'),'setup-warning');
       break;
     }
@@ -337,3 +338,64 @@ $('wizard-next').onclick=()=>{
 };
 $('setup-wizard').addEventListener('close',markWizardSeen);
 refresh();setInterval(refresh,10000);
+
+
+// Diagnostics are isolated from the setup wizard and do not poll RTSP sources.
+let diagActive = false;
+const pretty = value => value == null ? '—' : String(value);
+function makeDiagNode(tag, text, cls='') {
+  const el = document.createElement(tag);
+  el.textContent = text;
+  if (cls) el.className = cls;
+  return el;
+}
+async function loadDiagnostics(){
+  if (!diagActive) return;
+  const summary = $('diagnostics-summary');
+  summary.textContent = 'Reading gateway metrics…';
+  try {
+    const data = await api('api/diagnostics');
+    const sys = data.system || {};
+    summary.textContent = `Active streams: ${data.active} · CPU: ${pretty(sys.cpu_percent_one_core)}% of one logical core · RAM: ${pretty(sys.memory_mib)} MiB · Watchdog: ${data.watchdog_enabled ? 'on' : 'off'}`;
+    const cameras = $('diagnostics-cameras');
+    cameras.replaceChildren();
+    state.cameras.forEach(cam=>{
+      const st = (data.cameras || {})[cam.slug] || {};
+      const card = document.createElement('article');card.className='diag-camera';
+      card.append(makeDiagNode('strong',cam.name));
+      card.append(makeDiagNode('p', `Audio ${cam.audio_mode === 'aac'?'AAC':'OFF'} · ${st.running?'STREAMING':'IDLE'} · Starts ${st.starts||0} · Recoveries ${st.recoveries||0} · Stalls ${st.stalls||0} · Segment age ${pretty(st.segment_age_seconds)} s · Cooldown ${st.cooldown_seconds||0} s`));
+      if (st.last_error) card.append(makeDiagNode('p','Last issue: '+st.last_error,'diag-warning'));
+      const buttons=document.createElement('div');buttons.className='actions';
+      buttons.append(button('Probe A/V', async()=>{
+        try{const result=await api('api/diagnostics/camera/'+cam.slug,'POST');
+          toast(`${cam.name}: ${result.video.codec_name} ${result.video.profile || ''} · audio ${result.audio ? result.audio.codec_name : 'not detected'} · ${result.audio_warning || 'OK'}`);
+        }catch(e){toast('Probe: '+e.message);}
+      }));
+      buttons.append(button('Test local HLS', async()=>{
+        toast('Checking MPEG-TS and decoding the first video segment…');
+        try{const result=await api('api/diagnostics/hls/'+cam.slug,'POST');
+          toast(`${cam.name}: TS ${result.first_ts_seconds}s · ${result.segment_bytes} bytes · H.264/${result.audio_codec} · decode OK`);
+          await loadDiagnostics();
+        }catch(e){toast('Local HLS: '+e.message);}
+      }));
+      buttons.append(button('Restart if active',async()=>{
+        if(!confirm('Restart the active FFmpeg worker for '+cam.name+'?'))return;
+        try{const result=await api('api/restart/'+cam.slug,'POST');
+          toast(result.restarted?'Worker restarted':'Camera is idle; nothing changed');
+          await loadDiagnostics();
+        }catch(e){toast('Restart: '+e.message);}
+      }));
+      card.append(buttons);cameras.append(card);
+    });
+    const events=$('diagnostics-events');events.replaceChildren();
+    if(!(data.events||[]).length)events.append(makeDiagNode('p','No recent events.'));
+    (data.events||[]).forEach(e=>events.append(makeDiagNode('p',`${e.utc} · ${e.camera} · ${e.event} ${e.detail||''}`)));
+  }catch(e){summary.textContent='Diagnostics unavailable: '+e.message;}
+}
+$('diagnostics-open').onclick=()=>{
+  diagActive = !diagActive;
+  $('diagnostics-panel').hidden = !diagActive;
+  if(diagActive){$('diagnostics-panel').scrollIntoView({behavior:'smooth'});loadDiagnostics();}
+};
+$('diag-refresh').onclick=loadDiagnostics;
+setInterval(()=>{if(diagActive)loadDiagnostics();},15000);

@@ -1,5 +1,7 @@
 # Manual completo — Alexa RTSP Bridge Pro 0.4 Beta
 
+**Para audio y recuperación:** consulta [Audio y diagnósticos](AUDIO_DIAGNOSTICOS_ES.md). El audio está desactivado por defecto.
+
 **Ámbito:** Home Assistant Container sobre Ubuntu y Home Assistant OS. **Estado:** versión candidata; el nuevo wizard y la integración todavía requieren pruebas de aceptación en Home Assistant real.
 
 ## 1. ¿Qué instala cada componente?
