@@ -1,3 +1,10 @@
+## 0.6.1b1 — 2026-11-19 — AI diagnostic video frames
+
+- Add optional annotated JPEG camera viewer with model bounding boxes and confidence, served exclusively by admin API and CSRF.
+- Add opt-in Road mode with 1-second sampling and single-hit high-confidence traffic event threshold 0.72.
+- Keep Alexa HLS and Lambda unchanged; boxes are NOT yet burned into Alexa video.
+- Add per-view lifecycle with expiry and privacy tests; 43 local automated tests.
+
 ## 0.6.0b1 — Opt-in Pro Max AI (experimental)
 
 - Separate, resource-limited Docker AI service, disabled unless profile `ai` is started.

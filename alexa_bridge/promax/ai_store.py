@@ -43,6 +43,10 @@ class AIStore:
         self.images = self.path / 'snapshots'
         self.images.mkdir(exist_ok=True)
         self.images.chmod(0o700)
+        # Short-lived viewer-only annotated preview. Never exposed by the HLS service.
+        self.preview_dir = self.path / 'previews'
+        self.preview_dir.mkdir(exist_ok=True)
+        self.preview_dir.chmod(0o700)
         self.config_path = self.path / 'config.json'
         self.status_path = self.path / 'status.json'
         self.db_path = self.path / 'events.sqlite3'
@@ -86,7 +90,8 @@ class AIStore:
         clean = {}
         for slug, settings in data['cameras'].items():
             clean[slug] = {'enabled': bool(settings.get('enabled', False)),
-                           'substream_configured': bool(settings.get('substream'))}
+                           'substream_configured': bool(settings.get('substream')),
+                           'road_mode': bool(settings.get('road_mode',False))}
         data['cameras'] = clean
         return data
 
@@ -99,7 +104,7 @@ class AIStore:
                 if type(changes['enabled']) is not bool:
                     raise ValueError('enabled must be boolean')
                 current['enabled'] = changes['enabled']
-            rules = {'interval_seconds': (2, 30, int), 'confidence': (0.20, 0.95, (int, float)),
+            rules = {'interval_seconds': (1, 30, int), 'confidence': (0.20, 0.95, (int, float)),
                      'cooldown_seconds': (20, 3600, int), 'retention_days': (1, 30, int),
                      'motion_fraction': (0.0, 0.2, (int, float))}
             for key, (lo, hi, kind) in rules.items():
@@ -115,11 +120,15 @@ class AIStore:
                 slug = c['slug']
                 if not SLUG.fullmatch(slug):
                     raise ValueError('Invalid camera')
-                settings = current['cameras'].get(slug, {'enabled': False, 'substream': ''})
+                settings = current['cameras'].get(slug, {'enabled': False, 'substream': '', 'road_mode': False})
                 if 'enabled' in c:
                     if type(c['enabled']) is not bool:
                         raise ValueError('Camera enabled must be boolean')
                     settings['enabled'] = c['enabled']
+                if 'road_mode' in c:
+                    if type(c['road_mode']) is not bool:
+                        raise ValueError('Road mode must be boolean')
+                    settings['road_mode'] = c['road_mode']
                 if 'substream' in c:
                     url = c['substream']
                     if not isinstance(url, str):
@@ -207,6 +216,62 @@ class AIStore:
             return None
         path = self.images / (eid + '.jpg')
         return path.read_bytes() if path.is_file() else None
+
+    def set_preview_watch(self, slug, enabled):
+        """Authorize a short viewer session; worker writes frames only while watched."""
+        if not SLUG.fullmatch(slug):
+            raise ValueError('Invalid camera')
+        key = self.preview_dir / (slug + '.watch')
+        if enabled:
+            atomic_private(key, str(time.time() + 45).encode('ascii'))
+        else:
+            key.unlink(missing_ok=True)
+            (self.preview_dir / (slug + '.jpg')).unlink(missing_ok=True)
+            (self.preview_dir / (slug + '.json')).unlink(missing_ok=True)
+
+    def preview_watched(self, slug):
+        if not SLUG.fullmatch(slug):
+            return False
+        try:
+            return float((self.preview_dir / (slug + '.watch')).read_text()) >= time.time()
+        except (OSError, ValueError):
+            return False
+
+    def save_preview(self, slug, jpg, *, boxes, analyzed, motion, inference_ms):
+        if not SLUG.fullmatch(slug) or not self.preview_watched(slug):
+            return False
+        if not isinstance(jpg, bytes) or not jpg.startswith(b'\xff\xd8') or len(jpg) > 450000:
+            raise ValueError('Invalid preview image')
+        meta = {'camera': slug, 'utc': now_utc(), 'epoch': time.time(),
+                'analyzed': bool(analyzed), 'motion': bool(motion),
+                'inference_ms': round(float(inference_ms), 1),
+                'objects': [{'category': n, 'confidence': round(float(score), 3),
+                             'bbox': [int(x) for x in box]} for n,score,box in boxes[:30]]}
+        atomic_private(self.preview_dir / (slug + '.jpg'), jpg)
+        atomic_private(self.preview_dir / (slug + '.json'), json.dumps(meta).encode())
+        return True
+
+    def preview_info(self, slug):
+        if not SLUG.fullmatch(slug) or not self.preview_watched(slug):
+            return None
+        try:
+            meta = json.loads((self.preview_dir / (slug + '.json')).read_text())
+            if meta.get('camera') != slug or time.time()-meta.get('epoch', 0) > 35:
+                return None
+            meta['age_seconds'] = round(max(0, time.time()-meta['epoch']), 1)
+            return meta
+        except (OSError, ValueError, TypeError):
+            return None
+
+    def preview_jpeg(self, slug):
+        meta = self.preview_info(slug)
+        if meta is None:
+            return None
+        try:
+            data = (self.preview_dir / (slug + '.jpg')).read_bytes()
+            return data if data.startswith(b'\xff\xd8') else None
+        except OSError:
+            return None
 
     def purge_old(self):
         days = int(self.config().get('retention_days', 7))

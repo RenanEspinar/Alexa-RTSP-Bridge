@@ -400,6 +400,51 @@ $('diagnostics-open').onclick=()=>{
 $('diag-refresh').onclick=loadDiagnostics;
 setInterval(()=>{if(diagActive)loadDiagnostics();},15000);
 
+// Viewer is opt-in and short-lived. It never sends images through the public HLS endpoint.
+let aiLiveSlug = '', aiLiveTimer = null, aiLiveRefreshCount = 0;
+let aiLiveUrl = '';
+async function stopAiLive(){
+  const slug=aiLiveSlug;
+  aiLiveSlug='';
+  if(aiLiveTimer){clearInterval(aiLiveTimer);aiLiveTimer=null;}
+  $('ai-live').hidden=true;
+  $('ai-live-image').hidden=true;
+  if(aiLiveUrl){URL.revokeObjectURL(aiLiveUrl);aiLiveUrl='';}
+  if(slug)try{await api('api/ai/watch/'+slug,'POST',{watch:false});}catch(_e){}
+}
+async function pollAiLive(){
+  const slug=aiLiveSlug;if(!slug)return;
+  try{
+    // Renew only every 20 seconds: preview files are written only while viewed.
+    if(++aiLiveRefreshCount%5===0) await api('api/ai/watch/'+slug,'POST',{watch:true});
+    const r=await api('api/ai/preview-status/'+slug);
+    if(slug!==aiLiveSlug)return;
+    if(!r.preview){$('ai-live-status').textContent='Esperando fotograma de '+slug+' (modelo en ejecución)…';return;}
+    const m=r.preview;
+    const res=await fetch('api/ai/preview/'+slug,{headers:{'X-Bridge-CSRF':state.csrf}});
+    if(!res.ok)throw new Error('JPEG '+res.status);
+    const url=URL.createObjectURL(await res.blob());
+    if(slug!==aiLiveSlug){URL.revokeObjectURL(url);return;}
+    const img=$('ai-live-image');const prev=aiLiveUrl;aiLiveUrl=url;img.src=url;img.hidden=false;
+    if(prev)URL.revokeObjectURL(prev);
+    const objs=m.objects||[];
+    $('ai-live-status').textContent=`${slug} · hace ${m.age_seconds}s · ${objs.length} objeto(s) · ${m.analyzed?'modelo ejecutado':'sin inferencia'} · ${m.inference_ms} ms`+(objs.length?' · '+objs.map(o=>o.category+' '+Math.round(o.confidence*100)+'%').join(', '):'');
+  }catch(e){if(slug===aiLiveSlug)$('ai-live-status').textContent='Vista no disponible: '+e.message;}
+}
+async function startAiLive(slug){
+  if(aiLiveSlug)await stopAiLive();
+  try{
+    await api('api/ai/watch/'+slug,'POST',{watch:true});
+    aiLiveSlug=slug;aiLiveRefreshCount=0;
+    $('ai-live').hidden=false;
+    $('ai-live').scrollIntoView({behavior:'smooth',block:'center'});
+    $('ai-live-status').textContent='Conectando con '+slug+'…';
+    await pollAiLive();
+    aiLiveTimer=setInterval(pollAiLive,4000);
+  }catch(e){toast('No se pudo abrir el visor: '+e.message);}
+}
+$('ai-live-stop').onclick=stopAiLive;
+window.addEventListener('pagehide',()=>{if(aiLiveSlug)api('api/ai/watch/'+aiLiveSlug,'POST',{watch:false}).catch(()=>{});});
 // Optional AI detector: all requests remain behind the admin/CSRF surface.
 let aiActive=false;
 const aiNode=(tag, value, cls='')=>{
@@ -424,16 +469,20 @@ async function loadAI(){
       const label=aiNode('label',' Analyze this camera ');
       const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!conf.enabled;label.prepend(cb);
       wrap.append(label);
+      const roadLabel=aiNode('label',' Road mode (1s sampling; high-confidence traffic alerts) ');
+      const roadCB=document.createElement('input');roadCB.type='checkbox';roadCB.checked=!!conf.road_mode;roadLabel.prepend(roadCB);
+      wrap.append(roadLabel);
       const subLabel=aiNode('label','AI RTSP substream (optional; stored privately)');
       const input=document.createElement('input');input.type='password';input.autocomplete='new-password';
       input.placeholder=conf.substream_configured?'Substream saved — blank keeps it':'rtsp://camera:554/substream';
       subLabel.append(input);card.append(wrap,subLabel);
       const controls=aiNode('div','','actions');
       controls.append(button('Save camera AI',async()=>{
-        const payload={camera:{slug:cam.slug,enabled:cb.checked}};
+        const payload={camera:{slug:cam.slug,enabled:cb.checked,road_mode:roadCB.checked}};
         if(input.value.trim())payload.camera.substream=input.value.trim();
         try{await api('api/ai/config','POST',payload);toast('AI camera saved');loadAI();}catch(e){toast(e.message);}
       }));
+      controls.append(button('View AI boxes',()=>startAiLive(cam.slug)));
       controls.append(button('Clear substream',async()=>{
         if(!confirm('Use the original RTSP stream for AI on '+cam.name+'?'))return;
         try{await api('api/ai/config','POST',{camera:{slug:cam.slug,substream:''}});loadAI();}catch(e){toast(e.message);}
@@ -470,6 +519,7 @@ async function loadAI(){
 }
 $('ai-open').onclick=()=>{
   aiActive=!aiActive;$('ai-panel').hidden=!aiActive;
+  if(!aiActive)stopAiLive();
   if(aiActive){$('ai-panel').scrollIntoView({behavior:'smooth'});loadAI();}
 };
 $('ai-refresh').onclick=loadAI;

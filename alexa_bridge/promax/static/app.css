@@ -63,3 +63,11 @@
 .ai-preview {width:100%;max-height:220px;object-fit:contain;border-radius:8px;margin-top:8px}
 #ai-cameras input[type="password"] {display:block;width:100%;min-width:0;margin-top:5px}
 #ai-cameras .diag-camera {margin:10px 0}
+
+/* v0.6.1 diagnostic preview (never served through public HLS). */
+.ai-live{border:1px solid #28465d;border-radius:12px;padding:16px;margin:14px 0;background:#0b1b2b}
+.ai-live .cardhead{margin-bottom:8px}
+.ai-live h3{font-size:16px;margin:0 0 5px}
+.ai-live img{display:block;width:100%;max-width:960px;height:auto;border-radius:8px;object-fit:contain;background:#06101a}
+.ai-live img[hidden]{display:none}
+.ai-live #ai-live-status{color:#a7d8ef;margin:8px 0}

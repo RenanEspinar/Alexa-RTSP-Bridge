@@ -70,7 +70,7 @@ def make_handler(app: Application, admin=False):
                 elif path == '/static/app.js':
                     respond(self, 200, (STATIC / 'app.js').read_bytes(), 'application/javascript; charset=utf-8', head=head)
                 elif path == '/api/state':
-                    json_reply(self, 200, {'version': '0.6.0b1', 'csrf': app.csrf,
+                    json_reply(self, 200, {'version': '0.6.1b1', 'csrf': app.csrf,
                                            'cameras': app.store.public(), 'status': app.manager.status(),
                                            'uptime_seconds': round(time.time() - app.started)}, head=head)
                 elif path == '/api/diagnostics':
@@ -111,6 +111,28 @@ def make_handler(app: Application, admin=False):
                         respond(self, 404, head=head)
                     else:
                         respond(self, 200, photo, 'image/jpeg', head=head)
+                elif path.startswith('/api/ai/preview-status/'):
+                    if self.headers.get('X-Bridge-CSRF') != app.csrf:
+                        respond(self, 403, head=head)
+                        return
+                    slug = path.removeprefix('/api/ai/preview-status/')
+                    if not SLUG.fullmatch(slug) or slug not in app.store.slugs():
+                        respond(self, 404, head=head)
+                        return
+                    json_reply(self, 200, {'preview': app.ai.preview_info(slug)}, head=head)
+                elif path.startswith('/api/ai/preview/'):
+                    if self.headers.get('X-Bridge-CSRF') != app.csrf:
+                        respond(self, 403, head=head)
+                        return
+                    slug = path.removeprefix('/api/ai/preview/')
+                    if not SLUG.fullmatch(slug) or slug not in app.store.slugs():
+                        respond(self, 404, head=head)
+                        return
+                    jpg=app.ai.preview_jpeg(slug)
+                    if jpg is None:
+                        respond(self, 404, head=head)
+                    else:
+                        respond(self, 200, jpg, 'image/jpeg', head=head)
                 elif path == '/api/endpoint-map':
                     if self.headers.get('X-Bridge-CSRF') != app.csrf:
                         respond(self, 403, head=head)
@@ -190,6 +212,19 @@ def make_handler(app: Application, admin=False):
                     elif path == '/api/ai/config':
                         json_reply(self, 200, {'config': app.ai.save_config(data, app.store.slugs()),
                                                'status': app.ai.status()})
+                    elif path.startswith('/api/ai/watch/'):
+                        slug = path.removeprefix('/api/ai/watch/')
+                        if not SLUG.fullmatch(slug) or not app.store.get(slug):
+                            json_reply(self, 404, {'error': 'Camera not found'})
+                            return
+                        if not isinstance(data, dict) or type(data.get('watch')) is not bool:
+                            raise ValueError('watch must be boolean')
+                        if data['watch']:
+                            conf=app.ai.config()
+                            if not (conf['enabled'] and conf['cameras'].get(slug,{}).get('enabled')):
+                                raise ValueError('AI must be enabled for this camera first')
+                        app.ai.set_preview_watch(slug,data['watch'])
+                        json_reply(self, 200, {'ok': True, 'watch': data['watch']})
                     elif path.startswith('/api/ai/feedback/'):
                         eid = path.removeprefix('/api/ai/feedback/')
                         if not EVENT_ID.fullmatch(eid):
@@ -308,7 +343,7 @@ def serve():
     ui = ThreadingHTTPServer(('0.0.0.0', ui_port), make_handler(app, admin=True))
     media = ThreadingHTTPServer(('0.0.0.0', media_port), make_handler(app))
     threading.Thread(target=ui.serve_forever, daemon=True, name='admin-ui').start()
-    print(f'Alexa RTSP Bridge Pro v0.6.0b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
+    print(f'Alexa RTSP Bridge Pro v0.6.1b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
     try:
         media.serve_forever()
     finally:

@@ -1,9 +1,10 @@
 {
-  "version": "0.6.0b1",
+  "version": "0.6.1b1",
   "source": "v0.5 gateway plus optional OpenCV/ONNX YOLOX-Nano/Norfair AI sidecar",
   "evidence_build": "0.2.0b1",
   "evidence_date": "2026-11-19",
-  "status": "v0.6 AI beta: 41 automated tests on reconstructed v0.5 + v0.6 source; pretrained model and real camera/Alexa coexistence not yet field-verified",
+  "status": "preview UI + road mode beta; 43 local automated tests; browser and real-road camera pending; Alexa video overlay NOT implemented",
   "default_ai": "off",
-  "model": "YOLOX Nano COCO, upstream Apache-2.0, SHA-256 pinned"
+  "model": "YOLOX Nano COCO, upstream Apache-2.0, SHA-256 pinned",
+  "notes": "viewer is admin-only, renders annotated JPEG frames on demand; no modifications to HLS/Alexa media"
 }

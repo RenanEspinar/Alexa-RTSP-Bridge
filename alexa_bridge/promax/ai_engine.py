@@ -128,7 +128,7 @@ class TrackBuffer:
         self.observations = defaultdict(int)
         self.alerted_ids = set()
 
-    def ready(self, detections, cooldown):
+    def ready(self, detections, cooldown, *, fast_traffic=False):
         import numpy as np
         from norfair import Detection
         grouped = defaultdict(list)
@@ -142,6 +142,15 @@ class TrackBuffer:
                              data={'box':b,'score':score})
                    for _,score,b in objects]
             tracks = tracker.update(detections=det)
+            # Opt-in road mode: passing vehicles may be visible in a single 1s sample.
+            # Require a stronger score and use the same per-class cooldown.
+            if (fast_traffic and category in {'car','truck','bus','motorcycle','bicycle'}
+                    and now - self.last_alert.get(category,-1e6) >= cooldown):
+                candidates = [obj for obj in objects if obj[1] >= 0.72]
+                if candidates:
+                    chosen = max(candidates, key=lambda obj: obj[1])
+                    self.last_alert[category] = now
+                    output.append(chosen)
             for track in tracks:
                 # Do not treat a stale Norfair track as a fresh model observation.
                 if track.last_detection is None or not any(track.last_detection is d for d in det):
@@ -280,13 +289,33 @@ class Worker:
                 continue
             due=self.next_scan.get(slug,0)
             if time.monotonic()<due:continue
-            self.next_scan[slug]=time.monotonic()+int(settings['interval_seconds'])
+            road_mode=bool(conf.get('road_mode',False))
+            interval=1 if road_mode else int(settings['interval_seconds'])
+            self.next_scan[slug]=time.monotonic()+interval
             self.sample_counter[slug]=self.sample_counter.get(slug,0)+1
             motion=self.gates[slug].active(frame,float(settings['motion_fraction']))
-            # One periodic sample out of four also covers stationary objects.
-            if not (motion or self.sample_counter[slug]%4==0):continue
-            detections=self.detector.infer(frame,float(settings['confidence']))
-            for category,score,box in self.trackers[slug].ready(detections,int(settings['cooldown_seconds'])):
+            watched=self.ai.preview_watched(slug)
+            # While someone watches diagnostic preview, always run the model.
+            # Otherwise retain motion gating and periodic stationary-object scans.
+            analyzed=motion or watched or road_mode or self.sample_counter[slug]%4==0
+            detections=[]
+            elapsed_ms=0.0
+            if analyzed:
+                tic=time.monotonic()
+                detections=self.detector.infer(frame,float(settings['confidence']))
+                elapsed_ms=(time.monotonic()-tic)*1000
+            if watched:
+                try:
+                    jpg=annotated_jpeg(frame,detections)
+                    self.ai.save_preview(slug,jpg,boxes=detections,
+                                         analyzed=analyzed,motion=motion,inference_ms=elapsed_ms)
+                except (OSError,ValueError) as exc:
+                    LOG.warning('Preview not saved: %s',type(exc).__name__)
+            if not analyzed:
+                self.ai.heartbeat('running',camera=slug,model_loaded=True,detections=self.count,
+                                  message='No motion; skipped this sample')
+                continue
+            for category,score,box in self.trackers[slug].ready(detections,int(settings['cooldown_seconds']),fast_traffic=road_mode):
                 jpg=annotated_jpeg(frame,[(category,score,box)])
                 eid=self.ai.add_event(slug,category,score,jpg,box)
                 notify_home_assistant(slug,category,score,eid)

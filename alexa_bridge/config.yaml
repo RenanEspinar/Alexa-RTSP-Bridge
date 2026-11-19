@@ -1,5 +1,5 @@
 name: Alexa RTSP Bridge Pro (Optional AI preview)
-version: "0.6.0b1"
+version: "0.6.1b1"
 slug: alexa_rtsp_bridge_pro
 description: RTSP to signed H.264/HLS with on-demand streams, snapshots and diagnostics.
 url: https://github.com/RenanEspinar/Alexa-RTSP-Bridge
