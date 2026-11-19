@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a private signed HLS URL for local, manual smoke tests."""
+"""URL HLS temporal para probar una cámara sin pasar por Alexa."""
 import hashlib
 import hmac
 import json
@@ -11,6 +11,7 @@ import time
 ROOT = Path(__file__).resolve().parent.parent
 
 def sign(slug, key, base='http://127.0.0.1:8090', lifetime=900, now=None):
+    # No compartas este enlace: cualquiera que lo tenga puede usarlo hasta que caduque.
     if not re.fullmatch(r'[a-z][a-z0-9_]{0,39}', slug):
         raise ValueError('Invalid camera slug')
     if lifetime <= 0 or lifetime > 3600:

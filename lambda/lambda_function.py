@@ -1,7 +1,7 @@
-"""Reference Alexa Smart Home v3 proxy backed by Home Assistant.
+"""Proxy de Alexa Smart Home v3 hacia Home Assistant.
 
-This is a safer, configurable adaptation of the repository's original lambda.py;
-NOT a byte-for-byte copy of the AWS function deployed by the author.
+En las respuestas de cámara cambiamos la URL HLS por una URL firmada.
+Esta Lambda es la de RC1, no una copia de la función que está en AWS.
 """
 import hashlib
 import hmac
@@ -16,6 +16,7 @@ LOG.setLevel(logging.INFO)
 
 
 def signed_uri(base, slug, secret, now=None, lifetime=1800):
+    # Misma firma que comprueba controller.py al pedir la playlist.
     if not slug or not all(c.islower() or c.isdigit() or c == '_' for c in slug):
         raise ValueError('Bad camera slug')
     if not base.startswith('https://'):
@@ -81,6 +82,7 @@ def lambda_handler(event, context):
         return error_response(message_id, 'INTERNAL_ERROR', 'Invalid Home Assistant response')
     response_event = ha_result.get('event') or {}
     response_header = response_event.get('header') or {}
+    # Las demás respuestas de Alexa pasan sin tocarse.
     if response_header.get('namespace') == 'Alexa.CameraStreamController' and response_header.get('name') == 'Response':
         slug = mappings.get((response_event.get('endpoint') or {}).get('endpointId'))
         if slug:

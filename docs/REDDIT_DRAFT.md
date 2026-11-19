@@ -1,13 +1,9 @@
-# Reddit post draft — publish only after the full validation checklist
+# Notes for a community demo
 
-**Title**: I built an on-demand RTSP-to-HLS bridge for Alexa + Home Assistant, using Docker and FFmpeg
+I built Alexa RTSP Bridge because I wanted to open my existing RTSP cameras on Fire TV without relying on each camera vendor's Alexa skill.
 
-I wanted to view my existing RTSP cameras on an Alexa display without replacing my cameras or relying on each manufacturer's cloud integration. My setup uses an Alexa Smart Home Lambda proxy, Home Assistant, FFmpeg and Nginx behind HTTPS.
+The working system uses Home Assistant and AWS Lambda to return an HLS stream to Alexa. A small Python controller starts FFmpeg for whichever camera was requested and stops it after 30 seconds without playlist requests.
 
-The interesting bit is on-demand streaming: requesting the HLS playlist starts the camera's FFmpeg container. A watchdog stops it after 30 seconds without playlist requests. In my reference installation I configured eight independent camera containers. This is a playlist-idle heuristic, not a device-disconnect callback.
+The [Fire TV demo](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4) shows my original installation. I also put together an [experimental RC1](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/tree/review/reproducible-rc1-20261118) with configurable cameras, signed URLs and setup notes. The new version still needs full device testing.
 
-I've published the installation guide, Docker Compose generator, camera configuration examples, security notes and a reproducibility test matrix here: [GitHub repository](https://github.com/RenanEspinar/Alexa-RTSP-Bridge).
-
-The release candidate has per-camera RTSP secret files and expiring signed HLS links; **the new distribution still needs independent deployment testing**. If you've used Alexa CameraStreamController, Home Assistant, or FFmpeg on ARM/x86 hosts, I'd welcome technical feedback and reproducible tests. I'm especially interested in reported first-frame delay, HLS segment behavior and CPU use.
-
-[Insert only verified screenshots, measured results and a demo video after tests. Do not share signed URLs, private video or credentials.]
+If anyone has tried something similar with different camera codecs or Echo/Fire TV hardware, I'm interested in what worked and what didn't.

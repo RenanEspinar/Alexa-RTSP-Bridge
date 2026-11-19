@@ -11,13 +11,13 @@
 - Actual FFmpeg script: `/docker/alexa-bridge/start-camera.sh` searches the host's Home Assistant `configuration.yaml` using `awk`, extracts the configured RTSP URL, and transcodes H.264 baseline Level 3.1, 960×540, 15 fps, 1000 kb/s, one-second HLS segments, six-segment list.
 - The live Lambda configuration **was not captured**. The public GitHub Lambda code is therefore only a repository reference, not proof of the Lambda currently deployed in AWS.
 
-## Reproducibility blockers in current public main
+## Reproducibility problems found during the initial audit
 
 1. Server's `start-camera.sh`, controller, multi-camera Nginx routes, and container creation workflow were not fully published.
 2. The original FFmpeg launcher tightly couples to the author's Home Assistant YAML text and exact camera names.
 3. The original controller connects directly to unrestricted `/var/run/docker.sock` and publishes HTTP port 8080 on all host interfaces.
 4. Original HLS access has no signed-URL protection in the recovered Nginx/controller code, so a publicly shared playlist could reveal private video.
-5. Repo `scripts/stop_all_ffmpeg.sh` contains Docker Compose YAML instead of a stop script.
+5. At the first review, `scripts/stop_all_ffmpeg.sh` contained Docker Compose YAML instead of a Bash script; this has been fixed in the cleanup package for `main`.
 6. Installation, AWS account-linking, credentials handling, and device-specific tests are incomplete.
 
 ## What's changed in this package

@@ -1,88 +1,67 @@
-<p align="center"><img src="images/logo.png" alt="Alexa RTSP Bridge logo" width="145" /></p>
-
+<p align="center"><img src="images/logo.png" alt="Alexa RTSP Bridge" width="145"></p>
 <h1 align="center">Alexa RTSP Bridge</h1>
+<p align="center"><b>View RTSP cameras on Alexa and Fire TV, with FFmpeg running only when needed.</b></p>
 
-<p align="center"><strong>RTSP cameras on Amazon Alexa and Fire TV — with on-demand HLS streaming</strong></p>
+<p align="center">
+  <a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4">
+    <img src="images/firetv_preview.gif" alt="Actual Fire TV demo: opening an RTSP camera through Alexa" width="760">
+  </a>
+</p>
+<p align="center"><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4"><b>▶ Watch the full Fire TV recording (1080p)</b></a></p>
+<p align="center"><sub>Real footage from my running installation. GIF sped up for the preview.</sub></p>
 
-[![CI: static checks](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/actions/workflows/static-checks.yml/badge.svg?branch=review%2Freproducible-rc1-20261118)](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/actions/workflows/static-checks.yml?query=branch%3Areview%2Freproducible-rc1-20261118)
+<p align="center">
+  <a href="docs/INSTALL.md">Install</a> · <a href="docs/ALEXA_AWS.md">Alexa + AWS</a> · <a href="docs/ARCHITECTURE.md">Architecture</a> · <a href="docs/VALIDATION.md">Tests</a> · <a href="docs/SECURITY.md">Security</a>
+</p>
+
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Smart%20Home-18BCF2?logo=homeassistant&logoColor=white)
-![License: MIT](https://img.shields.io/badge/License-MIT-2DA44E)
-![Status: RC1](https://img.shields.io/badge/Status-RC1%20%7C%20experimental-F2A93B)
+![MIT](https://img.shields.io/badge/License-MIT-green)
+![RC1](https://img.shields.io/badge/Build-RC1%20experimental-orange)
+[![Tests](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/actions/workflows/static-checks.yml/badge.svg?branch=review%2Freproducible-rc1-20261118)](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/actions/workflows/static-checks.yml)
 
-<h3 align="center">See it running on a real Fire TV</h3>
+## Why I built it
 
-<p align="center"><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4"><img src="images/firetv_preview.gif" width="760" alt="Animated preview: selecting an Alexa camera on Fire TV, playing live RTSP-to-HLS video, and returning to the Fire TV interface." /></a></p>
+I already had RTSP cameras in Home Assistant, but wanted to open them from Fire TV by asking Alexa. I didn't want to replace the cameras or keep eight FFmpeg processes transcoding all day.
 
-<p align="center"><strong><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4">▶ Watch the complete Fire TV demonstration (1080p, 20.7 s)</a></strong></p>
+The setup I run at home uses Home Assistant, AWS Lambda, Docker, Nginx and FFmpeg. The video above is from that system.
 
-<p align="center"><sub>Real footage of the author's existing installation. The animated preview is accelerated 1.6× and has no audio; the full recording is linked above. This footage does not validate the new RC1 deployment.</sub></p>
+**This branch is RC1**, a more configurable version of the same idea. It adds signed HLS links and generates the camera containers from a JSON file. Its Python unit tests pass; a clean Docker deployment and the complete AWS/Alexa path still need to be tested. If you're looking for the original project, see [main](https://github.com/RenanEspinar/Alexa-RTSP-Bridge).
 
-<p align="center"><a href="docs/INSTALL.md">Installation</a> · <a href="docs/ALEXA_AWS.md">Alexa / AWS</a> · <a href="docs/ARCHITECTURE.md">Architecture</a> · <a href="docs/SECURITY.md">Security</a> · <a href="docs/VALIDATION.md">Test matrix</a></p>
+## How the stream starts
 
----
-
-## What this project does
-
-Alexa RTSP Bridge connects an **existing RTSP camera** to Alexa's camera-stream workflow using **Home Assistant, AWS Lambda, FFmpeg, Docker, and HTTPS HLS**. The original eight-camera installation has been demonstrated on Fire TV.
-
-The **RC1 branch** is a separate, configurable implementation derived from that installation. It adds per-camera RTSP secret files, generated Docker Compose services, a camera controller, and **HMAC-signed, expiring HLS URLs**. It is **experimental**: automated checks pass, but a fresh Docker installation and end-to-end Alexa playback of *RC1 itself* remain unverified.
-
-<p align="center"><img src="images/on_demand_flow.gif" width="900" alt="Animated sequence showing an Alexa request, HTTPS HLS access, FFmpeg startup, live video, and shutdown after 30 seconds without playlist requests." /></p>
-
-### Stream lifecycle
-
-1. Alexa sends a `CameraStreamController` directive to the **AWS Lambda Smart Home proxy**.
-2. Lambda forwards it to **Home Assistant**, receives the camera response, and substitutes the configured HLS URI. **RC1** signs that URI with an expiry timestamp.
-3. HTTPS ingress (for example, **Cloudflare Tunnel**) routes the playlist request to **Nginx**, then to the Python controller.
-4. The controller validates the signature, starts the camera's pre-created **FFmpeg** container, and serves the HLS playlist and video segments.
-5. After **30 seconds without another playlist request** (configurable), the watchdog stops that container. This is an inactivity heuristic, **not** a true Alexa disconnect event.
+<p align="center"><img src="images/on_demand_flow.gif" alt="Alexa request, camera startup, HLS playback and timeout" width="850"></p>
 
 ```mermaid
 flowchart LR
     A["Alexa / Fire TV"] --> B["AWS Lambda"]
-    B --> C["Home Assistant"]
-    C --> B
-    B -->|"Signed HLS URL · RC1"| D["HTTPS ingress"]
+    B <--> C["Home Assistant"]
+    B -->|"Signed HLS URL"| D["HTTPS / Cloudflare"]
     D --> E["Nginx"]
     E --> F["Python controller"]
-    F -->|"Start / stop"| G["Docker API proxy"]
-    G --> H["FFmpeg container"]
-    I["RTSP IP camera"] --> H
-    H --> J[("HLS files")]
+    F -->|"start / stop"| G["Docker API proxy"]
+    G --> H["FFmpeg"]
+    I["RTSP camera"] --> H
+    H --> J["HLS files"]
     J --> F
     F --> E
     E --> A
 ```
 
-### Baseline encoding profile
+When Alexa asks for a camera, Lambda sends the request to Home Assistant and replaces the camera stream URI with our HLS endpoint. Opening that playlist starts a pre-created FFmpeg container. After **30 seconds without another playlist request**, the controller stops it. That timeout is based on playlist traffic, not a disconnect event from Alexa.
 
-| Setting | Reference value |
-|:--|:--|
-| Video | H.264 / AVC, Baseline profile |
-| Frame size | **960 × 540** pixels |
-| Frame rate | **15 fps** |
-| Video bitrate | **1,000 kbit/s** target |
-| HLS segments | **1 second** each; 6-segment live playlist |
-| Audio | Disabled (`-an`) |
-| Inactivity timeout | **30 s** since last playlist request |
+My reference FFmpeg profile is **H.264 Baseline, 960 × 540, 15 fps, 1,000 kbit/s, no audio**, with one-second HLS segments. Those settings work in my environment, but different cameras and hosts need testing.
 
-These are settings recovered from the author's original installation. They are not universal performance or compatibility guarantees.
+## Trying RC1
 
-## Getting started with RC1
-
-**Requirements:** Linux, Docker Engine and Docker Compose, Python 3, OpenSSL, RTSP camera access, Home Assistant configured for Alexa Smart Home, AWS Lambda, an Alexa Smart Home skill, and a publicly reachable **HTTPS** route to the HLS server.
-
-> **Use an isolated test VM or host.** The original homeserver must not be replaced with this release candidate until Docker, Alexa, security, and recovery tests pass. **Do not copy real RTSP credentials into a public repository.**
+Use a separate Docker host or VM for your first test. **Don't replace a working installation with RC1 yet.**
 
 ```bash
-# Clone the experimental branch on a separate test host.
 git clone --branch review/reproducible-rc1-20261118 \
   https://github.com/RenanEspinar/Alexa-RTSP-Bridge.git
 cd Alexa-RTSP-Bridge
 
-# Prepare local-only camera definitions and signing material.
 cp .env.example .env
 cp config/cameras.example.json config/cameras.json
 mkdir -p local/secrets local/hls
@@ -90,96 +69,61 @@ chmod 700 local/secrets
 openssl rand -hex 32 > local/secrets/hls_signing_key
 chmod 600 local/secrets/hls_signing_key
 
-# Edit config/cameras.json and create local/secrets/<slug>.url
-# for each camera. Each private .url file contains one RTSP URL.
-# chmod 600 local/secrets/<slug>.url
-
+# Edit config/cameras.json and create one private .url file per camera.
+# Example: local/secrets/front_door.url, with permissions 600.
 python3 tools/configure.py
 python3 -m unittest discover -s tests -v
 docker compose -f compose.generated.yml config -q
 
-# ISOLATED TEST HOST ONLY: create the camera containers stopped,
-# then start the control and HTTP services.
+# Only on a separate test host:
 docker compose -f compose.generated.yml --profile camera create
 docker compose -f compose.generated.yml up -d dockerproxy controller nginx
 ```
 
-The `alexa_endpoint_id` entries in `config/cameras.json` must match the endpoint IDs reported by your Home Assistant Alexa integration. See **[the complete installation manual](docs/INSTALL.md)** before running these commands.
+See the [installation guide](docs/INSTALL.md) for RTSP secrets, Alexa endpoint IDs, HTTPS setup and the validation steps. Don't add your `local/` folder or private camera URLs to Git.
 
-### Complete documentation
+## Docs
 
-| Guide | What it covers |
-|:--|:--|
-| [Installation](docs/INSTALL.md) | Camera setup, Docker Compose generation, local validation and HTTPS ingress |
-| [Alexa & AWS](docs/ALEXA_AWS.md) | Lambda proxy, skill integration, endpoint mapping |
-| [Architecture](docs/ARCHITECTURE.md) | Original server vs. RC1 implementation; component boundaries |
-| [Security](docs/SECURITY.md) | HLS signing, RTSP secret files, Docker API proxy limitations |
-| [Validation](docs/VALIDATION.md) | Acceptance tests and evidence requirements |
-| [Troubleshooting](docs/TROUBLESHOOTING.md) | 403 / 404 / 503, RTSP failures and container startup |
-| [Media](docs/MEDIA.md) | Real footage, screenshots and evidence collection |
+| File | Details |
+|---|---|
+| [INSTALL.md](docs/INSTALL.md) | Docker setup, local HLS test and HTTPS access |
+| [ALEXA_AWS.md](docs/ALEXA_AWS.md) | Home Assistant Smart Home, Lambda and endpoint mapping |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Where each request goes, and what's different from my server |
+| [SECURITY.md](docs/SECURITY.md) | Docker permissions, RTSP passwords and signed URLs |
+| [VALIDATION.md](docs/VALIDATION.md) | What we've tested and what still needs work |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common HLS and container errors |
 
-## Verified vs. pending
+## What has been checked?
 
-| Capability | Current status |
-|:--|:--|
-| Original Fire TV camera playback | **Demonstrated** in the linked footage |
-| Original on-demand controller and eight configured camera containers | **Inspected** on the author's homeserver |
-| Original Nginx configuration | **Syntax verified** on the running instance |
-| RC1 camera/Compose generator | **Unit-tested** locally |
-| RC1 HMAC links and Lambda response transformation | **Unit-tested** locally |
-| New installation on a clean Docker host | **Pending** |
-| RC1 full Alexa / AWS / Fire TV playback | **Pending** |
-| Independent third-party installation | **Pending** |
-| Camera manufacturer/model compatibility matrix | **Not yet established** |
+- **Working:** the original installation can open cameras on Fire TV; that's what the video shows.
+- **Inspected:** the original controller, FFmpeg settings and Nginx configuration.
+- **Unit-tested:** RC1's camera generator, URL signing and Lambda response rewrite.
+- **Not yet tested:** a fresh RC1 Docker deployment, full Alexa playback with RC1, hardware compatibility and third-party installation.
 
-The CI badge represents **static checks and unit tests only**. It does not certify video playback, deployment security, or compatibility across camera models.
+The CI workflow checks Python/Bash syntax and unit tests; it doesn't verify playback on real hardware.
 
-## Security and privacy
+## A couple of common questions
 
-This system handles potentially sensitive video. Keep all RTSP credentials, signing keys, and camera configuration details outside Git. Even an HLS URL containing a valid signature is a temporary bearer credential: do not post it in logs, screenshots, issues, or public examples.
+<details><summary>Does it always run FFmpeg?</summary>
 
-RC1 uses a Docker API proxy to start and stop camera containers. Restrict network access to that proxy and treat any service controlling Docker as **high privilege**. A read-only mount of `docker.sock` does *not* make Docker API access read-only.
-
-See [Security](docs/SECURITY.md) for threat boundaries, key rotation, and safe diagnostics.
-
-## FAQ
-
-<details>
-<summary><b>Does the bridge keep all camera streams running?</b></summary>
-
-No. The original design starts FFmpeg when a camera playlist is requested and stops it after a period without new playlist requests. RC1 preserves that on-demand model. Actual CPU usage depends on the camera and host.
+No. FFmpeg starts on the first HLS playlist request and stops after the playlist goes idle.
 
 </details>
 
-<details>
-<summary><b>Will Fire TV always show camera thumbnails in the camera grid?</b></summary>
+<details><summary>Why don't all my cameras have thumbnails in Fire TV?</summary>
 
-Not necessarily. Live HLS playback and camera-tile thumbnails are different functions. This bridge implements live video; it does not guarantee the Fire TV interface will show or cache snapshot previews for every camera.
-
-</details>
-
-<details>
-<summary><b>Can I use any RTSP camera or a Raspberry Pi?</b></summary>
-
-Compatibility is not universal. Input codec, RTSP authentication, FFmpeg image architecture and available transcoding CPU must be tested. Raspberry Pi support and individual camera brands are not yet verified as part of RC1.
+Fire TV manages those previews. The bridge provides live HLS and doesn't guarantee thumbnail generation or caching.
 
 </details>
 
-<details>
-<summary><b>Is the demonstration video proof that RC1 is production-ready?</b></summary>
+<details><summary>Does any RTSP camera work?</summary>
 
-No. The video documents the author's existing working installation. RC1 introduces a new signed-URL and Docker deployment design that still needs end-to-end testing on real devices.
+Not guaranteed. The source codec, credentials, FFmpeg image and available CPU all matter. I haven't tested a vendor compatibility matrix or Raspberry Pi support for RC1.
 
 </details>
 
 ## Contributing
 
-Reproducible bug reports, sanitized logs, camera model/codec details, Docker and FFmpeg version information, test measurements, and security reviews are welcome. Please **never** include live camera credentials or private stream URLs in public issues.
+If you try this with another RTSP camera, I'd like to know the model, input codec, host hardware, first-frame delay and whether FFmpeg stops properly. Open an [issue](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/issues) with sanitized logs. Please don't post live URLs or screenshots from private cameras.
 
-- [Open an issue](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/issues)
-- [View experimental RC1 branch](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/tree/review/reproducible-rc1-20261118)
-- [View the original v0.1.0 release](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/releases/tag/v0.1.0)
-
-**Author:** Renan Espinar · [GitHub profile](https://github.com/RenanEspinar)
-**License:** [MIT](LICENSE)
-**Disclaimer:** Independent project; not affiliated with Amazon, Alexa, Home Assistant, Cloudflare, or camera manufacturers.
+Built by [Renan Espinar](https://github.com/RenanEspinar). [MIT license](LICENSE). Not affiliated with Amazon, Alexa, Home Assistant or Cloudflare.

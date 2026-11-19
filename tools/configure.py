@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate a Docker Compose deployment from local camera definitions.
+"""Arma el Compose local a partir de config/cameras.json.
 
-No Docker operations. It never reads, prints or serializes RTSP credentials.
-Run from the repository root: python3 tools/configure.py
+Revisa que los archivos RTSP existan y tengan formato correcto, pero nunca
+copia su contenido al Compose. Tampoco arranca contenedores.
 """
 import json
 import os
@@ -46,7 +46,7 @@ def load_cameras(path=CAMERA_CONFIG):
 
 
 def build_compose(cameras):
-    # JSON is valid YAML 1.2: an intentionally dependency-free Compose generator.
+    # Docker Compose también acepta JSON. Así evitamos depender de PyYAML.
     services = {
         'dockerproxy': {
             'image': 'tecnativa/docker-socket-proxy:v0.4.1',
@@ -54,7 +54,6 @@ def build_compose(cameras):
             'environment': {'CONTAINERS': '1', 'POST': '1'},
             'volumes': ['/var/run/docker.sock:/var/run/docker.sock:ro'],
             'networks': ['control'],
-
             'security_opt': ['no-new-privileges:true'],
         },
         'controller': {
@@ -85,11 +84,11 @@ def build_compose(cameras):
             'volumes': ['./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro'],
             'networks': ['media'],
             'depends_on': ['controller'],
-
             'tmpfs': ['/var/cache/nginx', '/var/run', '/tmp'],
             'security_opt': ['no-new-privileges:true'],
         },
     }
+    # Los contenedores se crean detenidos: el controlador los prende al pedir video.
     for c in cameras:
         slug = c['slug']
         container = f'alexa_cam_{slug}'

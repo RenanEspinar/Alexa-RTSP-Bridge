@@ -1,7 +1,6 @@
-"""Reference on-demand HLS controller.
+"""Sirve HLS por cámara y controla cuándo arrancar y parar FFmpeg.
 
-Live-source adaptation of the author's running architecture, with signed stream
-URLs and a Docker API proxy. NOT independently verified on an Echo device.
+La URL lleva una firma temporal. El Docker API proxy se queda en la red interna.
 """
 from __future__ import annotations
 import hashlib
@@ -33,6 +32,7 @@ if len(KEY) < 32 or not CAMERA_MAP or not all(re.fullmatch(r'[a-z][a-z0-9_]{0,39
 
 
 def validate_signed_path(path, now=None):
+    # La firma cubre la cámara y la caducidad, no el nombre del segmento.
     match = PATH_RX.fullmatch(urlsplit(path).path)
     if match is None:
         return None
@@ -64,6 +64,7 @@ def running(slug):
 
 
 def start(slug):
+    # Limpiamos los .ts viejos antes de arrancar, para no servir otro stream.
     if running(slug):
         return
     folder = HLS_ROOT / slug
@@ -87,6 +88,7 @@ def stop(slug):
 
 
 def watchdog():
+    # Esto mide peticiones de playlist, no si Alexa cerró la pantalla.
     while True:
         time.sleep(5)
         for slug in CAMERA_MAP:
@@ -148,7 +150,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 pass
 
     def log_message(self, fmt, *args):
-        # Do not log the request path: it embeds a temporary bearer credential.
+        # Ojo: la URL contiene una firma válida. Mejor no guardarla en logs.
         pass
 
 

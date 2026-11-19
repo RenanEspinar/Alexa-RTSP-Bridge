@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Public, configurable adaptation of the original homeserverv2 FFmpeg script.
+# Perfil HLS que uso para Alexa: 540p, 15 fps y sin audio.
+# RTSP viene de un archivo privado; no pongas contraseñas aquí.
 set -euo pipefail
 : "${CAMERA_SLUG:?Missing CAMERA_SLUG}"
 [[ "$CAMERA_SLUG" =~ ^[a-z][a-z0-9_]{0,39}$ ]] || { echo 'Bad camera slug' >&2; exit 2; }
@@ -8,6 +9,7 @@ URL_FILE='/run/secrets/rtsp_url'
 IFS= read -r RTSP_URL < "$URL_FILE" || [[ -n "${RTSP_URL:-}" ]]
 [[ "$RTSP_URL" == rtsp://* || "$RTSP_URL" == rtsps://* ]] || { echo 'Not an RTSP URL' >&2; exit 2; }
 mkdir -p "/hls/${CAMERA_SLUG}"
+# Un segmento por segundo. La playlist conserva los últimos seis.
 exec ffmpeg -hide_banner -nostdin -loglevel warning \
   -rtsp_transport tcp -fflags +genpts+nobuffer -flags low_delay \
   -i "$RTSP_URL" -an \
