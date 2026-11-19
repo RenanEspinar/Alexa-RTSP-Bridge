@@ -1,4 +1,1 @@
-# Alexa RTSP Bridge
-# Python dependencies for AWS Lambda
-
-urllib3>=2.2.0,<3.0.0
+# No third-party Python packages. Uses Python standard library on AWS Lambda.

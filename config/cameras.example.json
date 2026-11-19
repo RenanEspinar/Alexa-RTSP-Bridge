@@ -1,0 +1,12 @@
+{
+  "cameras": [
+    {
+      "slug": "front_door",
+      "alexa_endpoint_id": "camera#front_door"
+    },
+    {
+      "slug": "garage",
+      "alexa_endpoint_id": "camera#garage"
+    }
+  ]
+}

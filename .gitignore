@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Private configuration
+.env
+config/cameras.json
+local/
+*.pem
+*.key
