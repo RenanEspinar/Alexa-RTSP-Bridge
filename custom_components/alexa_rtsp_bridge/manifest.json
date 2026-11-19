@@ -1,0 +1,14 @@
+{
+  "domain": "alexa_rtsp_bridge",
+  "name": "Alexa RTSP Bridge Pro",
+  "version": "0.3.0b1",
+  "documentation": "https://github.com/RenanEspinar/Alexa-RTSP-Bridge",
+  "issue_tracker": "https://github.com/RenanEspinar/Alexa-RTSP-Bridge/issues",
+  "codeowners": [
+    "@RenanEspinar"
+  ],
+  "config_flow": true,
+  "iot_class": "local_polling",
+  "integration_type": "hub",
+  "requirements": []
+}

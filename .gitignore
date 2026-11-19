@@ -1,28 +1,22 @@
-# Python / editor
+# Private configuration and video data
+.env
+.env.*
+!.env.pro.example
+*.url
+cameras.json
+metadata.json
+local/
+secrets/
+backup*/
+backups/
+*.key
+*.pem
+*.p12
+*.log
+alexa-promax-resultados/
+compose.generated.yml
 __pycache__/
 *.py[cod]
 .pytest_cache/
-.ruff_cache/
 .venv/
-venv/
-.idea/
-.vscode/
-*.log
-
-# Cosas locales que no van al repo
-.env
-.env.*
-!.env.example
-local/
-config/cameras.json
-compose.generated.yml
-*.pem
-*.key
-*.url
-*.m3u8
-*.ts
-
-# Builds
-build/
-dist/
-*.egg-info/
+.DS_Store

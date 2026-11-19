@@ -1,0 +1,29 @@
+name: Pro v0.3 validation
+on:
+  push:
+    paths:
+      - 'alexa_bridge/**'
+      - 'custom_components/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'compose.pro.yml'
+      - '.github/workflows/pro-v03-checks.yml'
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Validate Python, shell and JS
+        run: |
+          python -m compileall -q custom_components/alexa_rtsp_bridge alexa_bridge/promax
+          node --check alexa_bridge/promax/static/app.js
+          bash -n scripts/actualizar_existente.sh
+          python -m unittest discover -s tests -v
+      - name: Validate Compose and Docker image
+        run: |
+          docker compose -f compose.pro.yml config -q
+          docker build -t alexa-rtsp-bridge-pro:v03 ./alexa_bridge

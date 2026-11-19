@@ -1,0 +1,18 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Alexa RTSP Bridge Pro",
+        "description": "The Docker streaming gateway must be running. Enter an HTTP(S) URL reachable from Home Assistant.",
+        "data": {
+          "gateway_url": "Gateway admin URL"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Enter a base HTTP(S) URL without a path.",
+      "not_bridge": "This server is not Alexa RTSP Bridge Pro.",
+      "cannot_connect": "Home Assistant cannot reach the gateway."
+    }
+  }
+}

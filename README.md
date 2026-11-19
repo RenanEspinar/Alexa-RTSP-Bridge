@@ -1,67 +1,89 @@
-<p align="center"><img src="images/logo.png" width="165" alt="Alexa RTSP Bridge"></p>
-<h1 align="center">Alexa RTSP Bridge</h1>
-<p align="center"><b>RTSP cameras on Amazon Alexa and Fire TV, with HLS created on demand.</b></p>
+# Alexa RTSP Bridge Pro
 
-<p align="center">
-  <a href="Alexa_RTSP_Bridge_FireTV_README_1080p.mp4">
-    <img src="images/firetv_preview.gif" width="760" alt="Fire TV opening a live RTSP camera through Alexa">
-  </a>
-</p>
-<p align="center"><a href="Alexa_RTSP_Bridge_FireTV_README_1080p.mp4"><b>▶ Watch the Fire TV demo</b></a> · <a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/tree/review/reproducible-rc1-20261118"><b>Try the experimental RC1</b></a></p>
+**RTSP cameras on Home Assistant, Alexa and Fire TV — on-demand HLS, camera dashboard and guided setup.**
 
-![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-FFmpeg-2496ED?logo=docker&logoColor=white)
-![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Alexa-18BCF2?logo=homeassistant&logoColor=white)
-![MIT](https://img.shields.io/badge/License-MIT-green)
+<p align="center"><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4"><img src="images/firetv_preview.gif" alt="Real Fire TV test of the original installation" width="760"></a></p>
 
-## Why I made this
+**[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
 
-I already had several RTSP cameras in Home Assistant. I wanted to see them on my Fire TV using Alexa, without buying different cameras or leaving FFmpeg running for every feed.
+> **Version:** `0.3.0b1` preview. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the 0.3 wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
 
-This project connects Alexa's camera-stream requests to Home Assistant, rewrites the HLS URL in AWS Lambda and starts the relevant FFmpeg container when someone asks for video. The container stops again after **30 seconds without a playlist request**.
+## What it includes
 
-The video above is from my real installation. I have eight cameras configured. This is a personal open-source project, not a certified Alexa integration or a universal camera compatibility guarantee.
+| Feature | Status |
+|---|---|
+| RTSP → H.264/MPEG-TS HLS on demand | Implemented; Pro 0.2 tested with 8 RTSP channels |
+| Start/stop of FFmpeg on request/idle | Implemented; observed during the tests |
+| Camera management dashboard / RTSP probe / JPEG snapshots | Implemented; tested on Ubuntu |
+| Automatic H.264 compatible copy or transcoding | Implemented; reported trial used **transcode** |
+| Signed HLS playlist, segment and snapshot URLs | Implemented; local automated tests |
+| 4-step setup wizard | **New in 0.3 preview; needs browser acceptance testing** |
+| Home Assistant custom integration / entities | **New in 0.3 preview; not yet tested in a live HA installation** |
+| Home Assistant OS app packaging | Experimental; requires HA OS testing |
+| Alexa Smart Home Lambda template | Provided; use a test skill before production |
+
+## Installation choices
+
+**Home Assistant Container / Ubuntu Docker:** run the `alexa_bridge` gateway using `compose.pro.yml`, then install the optional Home Assistant integration. This is the method used on the author's server. The wizard is already inside the gateway web panel.
+
+**Home Assistant OS:** the `alexa_bridge/` folder is a Home Assistant app/add-on candidate. The app and its HA integration are separate; verify the HA OS packaging before a public release.
+
+**Home Assistant 2026.11+:** use **Settings → Marketplace → Add from link** to add this repository, then install the custom integration. Prior versions can use **HACS → Custom repositories → Integration**. **Neither method installs Docker or configures AWS automatically.** [Official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace).
+
+<!-- ha-marketplace:exclude-start -->
+### Quick start: Docker (new deployment)
+
+```bash
+git clone https://github.com/RenanEspinar/Alexa-RTSP-Bridge.git
+cd Alexa-RTSP-Bridge
+cp .env.pro.example .env.pro
+docker compose --env-file .env.pro -f compose.pro.yml config -q
+docker compose --env-file .env.pro -f compose.pro.yml up --build -d
+```
+
+Open `http://127.0.0.1:18099` **from the Docker host only**; for remote access, use SSH port forwarding or Cloudflare Access. **Never expose the unauthenticated administration port directly on the Internet.** Configure Alexa and signed media using the full manual.
+
+**Existing Pro Beta v0.2 installation:** see [upgrade without a second server](docs/MIGRAR_DESDE_V02.md). The code is updated in the current compose project, with the same named volume and existing ports.
+<!-- ha-marketplace:exclude-end -->
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    A["Alexa / Fire TV"] --> B["AWS Lambda"]
-    B <--> C["Home Assistant"]
-    B --> D["HTTPS / Cloudflare Tunnel"]
-    D --> E["Nginx"]
-    E --> F["On-demand controller"]
-    F --> G["FFmpeg"]
-    H["RTSP camera"] --> G
-    G --> I["HLS video"]
-    I --> E
-    E --> A
+ A[RTSP / NVR] --> B[FFmpeg on demand]
+ B --> C[HLS gateway - signed URLs]
+ C --> D[Alexa relay / Fire TV]
+ E[Home Assistant] --> F[AWS Lambda]
+ F --> C
+ G[Private setup dashboard] --> B
 ```
 
-The default reference video profile is H.264 Baseline at **960 × 540 / 15 fps / 1 Mbit/s**. Audio is disabled. The live HLS playlist contains six one-second segments.
+Amazon Alexa needs a separate Smart Home skill, account linking and an HTTPS endpoint. The gateway does not automatically provision those external accounts.
 
-**One thing to know:** this `main` branch contains my original examples and documentation. It's not a one-command setup for someone else's server.
+## Measurements from a real 8-channel installation
 
-## Want to install it?
+Ubuntu host, **4 logical CPUs**, approximately **7.1 GiB RAM**. One 60-second sustained trial per concurrency level, with RTSP channels originating from the same NVR, all using `transcode`:
 
-I'm preparing a configurable deployment in the **[RC1 branch](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/tree/review/reproducible-rc1-20261118)**. That branch includes:
+| Concurrent channels | Mean Docker CPU | Peak Docker CPU | Peak container RAM | Unique `.ts` segments | HTTP / other errors |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 42.90% | 82.31% | 104.1 MiB | 61 | 0 / 0 |
+| 4 | 146.47% | 164.12% | 338.6 MiB | 253 | 0 / 0 |
+| 8 | 190.26% | 240.52% | 678.7 MiB | 511 | 0 / 0 |
 
-- [Installation instructions](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/review/reproducible-rc1-20261118/docs/INSTALL.md)
-- [AWS Lambda + Alexa setup](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/review/reproducible-rc1-20261118/docs/ALEXA_AWS.md)
-- [Private RTSP configuration + Compose generator](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/tree/review/reproducible-rc1-20261118/tools)
-- [Security notes](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/review/reproducible-rc1-20261118/docs/SECURITY.md)
-- [Test checklist](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/review/reproducible-rc1-20261118/docs/VALIDATION.md)
+At eight channels, average time to the first TS segment was **11.474 s**; processes stopped after inactivity. **100% Docker CPU ≈ one logical CPU** (400% nominal on the 4-CPU host). Four channels showed a `max_gap_new_ts_s` over 5 s in the 8-channel trial. This metric is a client-observed gap between newly discovered segments, not proof of video freezing. Results are **preliminary** (one trial per condition, no competing baseline, no Alexa Pro 0.3 end-to-end playback data).
 
-**RC1 is experimental.** Its automated checks pass, but deploying it from scratch and reproducing Alexa playback on another device remain unverified. Please don't deploy it over a working installation without testing.
+![Measured CPU by concurrency](benchmarks/2026-11-19/figuras/cpu_vs_concurrencia.png)
 
-The [earlier detailed README](docs/ORIGINAL_README.md) is archived for reference. It describes the original setup and includes examples that may need adaptation.
+[**Complete measured report**](docs/RENDIMIENTO_EXPERIMENTAL.md) · [**Anonymized CSV and reproducible analysis**](benchmarks/2026-11-19/) · [**Benchmark script**](tools/benchmark_sostenido.py)
 
-## Things worth testing
+## Manuals and support
 
-Different RTSP cameras and input codecs; first-frame delay; stream startup after Docker restarts; HLS segment behavior on slow networks; and Fire TV thumbnail behavior. I've also seen that an out-of-date Docker socket mount can break camera startup until the controller container is restarted.
+- [Complete Spanish guide](docs/GUIA_COMPLETA_ES.md) — prerequisites, installation, wizard, cameras, HA, Alexa, Cloudflare, security, troubleshooting and updates.
+- [English setup guide](docs/SETUP_GUIDE_EN.md) — installation and configuration overview.
+- [Alexa + AWS Lambda](docs/ALEXA_LAMBDA_ES.md) — external manual account setup and test procedure.
+- [Security and privacy](docs/SEGURIDAD_ES.md).
+- [Upgrade existing Pro Beta](docs/MIGRAR_DESDE_V02.md).
+- [Experimental results and limitations](docs/RENDIMIENTO_EXPERIMENTAL.md).
+- [Publish sources to GitHub](docs/PUBLICAR_EN_GITHUB.md).
 
-If you have a reproducible issue or a working setup with another camera model, open an [issue](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/issues). Sanitized logs are much more useful than screenshots of secrets.
-
-## License
-
-MIT — see [LICENSE](LICENSE). Built by [Renan Espinar](https://github.com/RenanEspinar). Not affiliated with Amazon, Alexa, Home Assistant or Cloudflare.
+**License:** MIT. Community project by [Renan Espinar](https://github.com/RenanEspinar), not affiliated with Amazon, Home Assistant or Cloudflare. Report reproducible issues with sanitized logs only: [GitHub Issues](https://github.com/RenanEspinar/Alexa-RTSP-Bridge/issues).

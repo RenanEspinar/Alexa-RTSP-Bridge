@@ -1,0 +1,2 @@
+concurrency,camera_id,duration_target_s,first_playlist_s,first_ts_s,ready,effective_mode,unique_segments,ts_bytes,playlist_requests,segment_requests,http_errors,other_errors,max_gap_new_ts_s,first_error_type
+1,camera_01,60,4.222,4.224,True,transcode,61,8062380,75,61,0,0,1.612,

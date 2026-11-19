@@ -1,0 +1,18 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Alexa RTSP Bridge Pro",
+        "description": "The gateway must already be running in Docker or a Home Assistant OS app. Enter the address reachable from the Home Assistant server, not your remote browser.",
+        "data": {
+          "gateway_url": "Gateway admin URL"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Enter an HTTP(S) base URL without a path.",
+      "not_bridge": "This server is not an Alexa RTSP Bridge Pro gateway.",
+      "cannot_connect": "Home Assistant cannot reach the gateway."
+    }
+  }
+}

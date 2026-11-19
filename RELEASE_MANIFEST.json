@@ -1,0 +1,7 @@
+{
+  "version": "0.3.0b1",
+  "source": "Alexa_RTSP_Bridge_HACS_Wizard_v0.3.0_Preview.zip plus anonymized benchmark evidence",
+  "evidence_build": "0.2.0b1",
+  "evidence_date": "2026-11-19",
+  "status": "preview, real Home Assistant install and Alexa integration not yet tested"
+}

@@ -1,0 +1,4 @@
+concurrency,target_sustained_s,streams_ready,streams_expected,streams_with_new_segments,total_unique_segments,http_errors,other_errors,cpu_avg_pct,cpu_peak_pct,memory_peak_mib,samples_steady,all_idle_after,aborted_by_guardrail,abort_reason
+1,60,1,1,1,61,0,0,42.9,82.31,104.1,30,True,False,
+4,60,4,4,4,253,0,0,146.47,164.12,338.6,30,True,False,
+8,60,8,8,8,511,0,0,190.26,240.52,678.7,30,True,False,

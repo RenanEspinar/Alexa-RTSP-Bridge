@@ -1,0 +1,26 @@
+name: Alexa RTSP Bridge Pro (Setup preview)
+version: "0.3.0b1"
+slug: alexa_rtsp_bridge_pro
+description: RTSP to signed H.264/HLS with on-demand streams, snapshots and diagnostics.
+url: https://github.com/RenanEspinar/Alexa-RTSP-Bridge
+arch:
+  - amd64
+  - aarch64
+startup: services
+boot: auto
+init: false
+ingress: true
+ingress_port: 8099
+panel_icon: mdi:cctv
+panel_title: Alexa RTSP Bridge
+panel_admin: true
+ports:
+  8090/tcp: 8090
+ports_description:
+  8090/tcp: Signed HLS media gateway (expose only behind HTTPS ingress)
+options:
+  idle_timeout: 30
+  snapshot_ttl: 120
+schema:
+  idle_timeout: int(10,3600)
+  snapshot_ttl: int(15,3600)

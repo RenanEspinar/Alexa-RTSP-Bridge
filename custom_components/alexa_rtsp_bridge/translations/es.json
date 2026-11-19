@@ -1,0 +1,18 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Conectar Alexa RTSP Bridge Pro",
+        "description": "El servidor de transmisión debe estar funcionando antes en Docker o como app de Home Assistant OS. Introduce la dirección accesible desde Home Assistant.",
+        "data": {
+          "gateway_url": "URL de administración del servidor"
+        }
+      }
+    },
+    "error": {
+      "invalid_url": "Introduce una URL HTTP(S) sin ruta.",
+      "not_bridge": "El servidor no corresponde a Alexa RTSP Bridge Pro.",
+      "cannot_connect": "Home Assistant no puede conectarse al servidor."
+    }
+  }
+}

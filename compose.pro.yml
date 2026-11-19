@@ -1,0 +1,29 @@
+services:
+  bridge:
+    build:
+      context: ./alexa_bridge
+    container_name: alexa_rtsp_bridge_pro_beta
+    restart: unless-stopped
+    environment:
+      DATA_DIR: /data
+      IDLE_TIMEOUT: ${IDLE_TIMEOUT:-30}
+      SNAPSHOT_TTL: ${SNAPSHOT_TTL:-120}
+    ports:
+      # Control panel only via localhost / SSH tunnel.
+      - "127.0.0.1:${UI_PORT:-8099}:8099"
+      # Public stream must use HTTPS ingress (Cloudflare Tunnel or reverse proxy).
+      - "127.0.0.1:${HLS_PORT:-8090}:8090"
+    volumes:
+      - bridge_pro_data:/data
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8099/api/state', timeout=3).close()"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+volumes:
+  bridge_pro_data:

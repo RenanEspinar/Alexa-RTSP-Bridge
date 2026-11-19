@@ -1,0 +1,4 @@
+concurrencia,numero_camaras,numero_muestras_sostenidas,CPU_medio_pct,CPU_desv_estandar_temporal_pct,CPU_pico_pct,RAM_pico_MiB,RAM_inicio_sostenido_MiB,RAM_final_sostenido_MiB,RAM_cambio_inicio_fin_MiB,primer_TS_promedio_s,primer_TS_min_s,primer_TS_max_s,segmentos_distintos,TS_bytes_suma,brechas_mayores_5s,errores_HTTP,otros_errores,apagado_automatico,aborto_guardarrail
+1,1,30,42.903,8.912,82.31,104.1,95.65,103.8,8.15,4.224,4.224,4.224,61,8062380,0,0,0,True,False
+4,4,30,146.475,8.745,164.12,338.6,314.4,338.5,24.1,6.598,4.252,9.353,253,33393312,0,0,0,True,False
+8,8,30,190.26,12.006,240.52,678.7,627.0,675.9,48.9,11.474,4.484,18.081,511,66999440,4,0,0,True,False
