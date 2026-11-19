@@ -125,7 +125,7 @@ class APITests(unittest.TestCase):
             self.assertTrue(json.load(r)['config']['enabled'])
         with self._req('/api/state') as r:
             state=json.load(r)
-        self.assertEqual(state['version'],'0.6.1b1')
+        self.assertEqual(state['version'],'0.7.0b1')
         self.assertEqual(len(state['cameras']),1)
         self.assertNotIn('PRIVATE',json.dumps(state))
 

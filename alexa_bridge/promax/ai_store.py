@@ -44,6 +44,9 @@ class AIStore:
         self.images.mkdir(exist_ok=True)
         self.images.chmod(0o700)
         # Short-lived viewer-only annotated preview. Never exposed by the HLS service.
+        self.overlay_dir = self.path / 'overlay'
+        self.overlay_dir.mkdir(exist_ok=True)
+        self.overlay_dir.chmod(0o700)
         self.preview_dir = self.path / 'previews'
         self.preview_dir.mkdir(exist_ok=True)
         self.preview_dir.chmod(0o700)
@@ -272,6 +275,26 @@ class AIStore:
             return data if data.startswith(b'\xff\xd8') else None
         except OSError:
             return None
+
+    def save_live_boxes(self, slug, *, width, height, objects, ttl_seconds=4):
+        """Private detector output consumed only by the local HLS overlay controller."""
+        if not SLUG.fullmatch(slug) or not 1 <= width <= 8192 or not 1 <= height <= 8192:
+            raise ValueError('Invalid detector frame')
+        clean = []
+        for category, confidence, bbox in objects[:8]:
+            if category not in CATEGORIES or not 0 <= confidence <= 1 or len(bbox) != 4:
+                continue
+            coords = [int(x) for x in bbox]
+            if (0 <= coords[0] < coords[2] <= width and
+                    0 <= coords[1] < coords[3] <= height):
+                clean.append({'category': category, 'confidence': round(float(confidence), 3),
+                              'bbox': coords})
+        if not 1 <= float(ttl_seconds) <= 8:
+            raise ValueError('Invalid overlay TTL')
+        atomic_private(self.overlay_dir / (slug + '.json'), json.dumps({
+            'ttl': float(ttl_seconds), 'epoch': time.time(), 'camera': slug, 'width': int(width),
+            'height': int(height), 'objects': clean
+        }, separators=(',', ':')).encode())
 
     def purge_old(self):
         days = int(self.config().get('retention_days', 7))

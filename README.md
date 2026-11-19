@@ -1,12 +1,14 @@
+> **v0.7 Beta:** Optional in-video Alexa AI boxes using FFmpeg drawbox (experimental; CPU cost). See [guide](docs/AI_OVERLAY_V07_ES.md).
+
 # Alexa RTSP Bridge Pro
 
 **RTSP cameras on Home Assistant, Alexa and Fire TV — on-demand HLS, optional AAC, diagnostics, recovery, guided installation and an opt-in OpenCV/YOLOX AI detector.**
 
 <p align="center"><a href="https://github.com/RenanEspinar/Alexa-RTSP-Bridge/blob/main/Alexa_RTSP_Bridge_FireTV_README_1080p.mp4"><img src="images/firetv_preview.gif" alt="Real Fire TV test of the original installation" width="760"></a></p>
 
-**[Pro Max AI v0.6 guide (ES)](docs/PRO_AI_V06_ES.md)** · **[Audio, diagnostics & recovery (ES)](docs/AUDIO_DIAGNOSTICOS_ES.md)** · **[AI viewer / Road mode (ES)](docs/AI_VISOR_V061_ES.md)** · **[First-time beginner installation (ES)](docs/WIZARD_DESDE_CERO_ES.md)** · **[Beginner setup (EN)](docs/START_FROM_ZERO_EN.md)** · **[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
+**[AI Overlay on Alexa v0.7 (ES)](docs/AI_OVERLAY_V07_ES.md)** · **[Pro Max AI v0.6 guide (ES)](docs/PRO_AI_V06_ES.md)** · **[Audio, diagnostics & recovery (ES)](docs/AUDIO_DIAGNOSTICOS_ES.md)** · **[AI viewer / Road mode (ES)](docs/AI_VISOR_V061_ES.md)** · **[First-time beginner installation (ES)](docs/WIZARD_DESDE_CERO_ES.md)** · **[Beginner setup (EN)](docs/START_FROM_ZERO_EN.md)** · **[Watch original Fire TV demonstration](Alexa_RTSP_Bridge_FireTV_README_1080p.mp4)** · **[Complete installation guide (ES)](docs/GUIA_COMPLETA_ES.md)** · **[English setup guide](docs/SETUP_GUIDE_EN.md)** · **[Measured performance](docs/RENDIMIENTO_EXPERIMENTAL.md)**
 
-> **Version:** `0.6.1b1` experimental optional AI beta. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the guided-install wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
+> **Version:** `0.7.0b1` experimental Alexa HLS box overlay beta. The original Alexa installation was demonstrated on Fire TV; the Pro 0.2 engine was tested with eight real RTSP channels on Ubuntu; the guided-install wizard and Home Assistant integration are new and must be validated on a real Home Assistant system. Do not equate these tests with an Alexa end-to-end validation of the new build.
 
 ## What it includes
 
@@ -26,6 +28,7 @@
 | Alexa Smart Home Lambda template | Provided; use a test skill before production |
 | Optional OpenCV + YOLOX-Nano + Norfair AI | **New 0.6; AI OFF by default; real RTSP detection pending field testing** |
 | Event snapshots and user confirmation | Implemented as a private admin feature; local tests passed |
+| Optional Alexa HLS AI boxes (up to one camera) | **New v0.7 beta; synthetic FFmpeg tests passed; Fire TV pending** |
 | Optional Home Assistant AI events/mobile notification | Implemented; requires private HA token and deployment test |
 
 ## New in v0.6: optional AI detector

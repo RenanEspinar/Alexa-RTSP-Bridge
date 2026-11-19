@@ -83,6 +83,10 @@ class Store:
             if endpoint and any(c['alexa_endpoint_id'] == endpoint and s != slug
                                 for s, c in self.cameras.items()):
                 raise ValueError('Alexa endpoint ID already used')
+            if camera.get('overlay_mode') == 'boxes' and any(
+                c.get('overlay_mode') == 'boxes' for s,c in self.cameras.items() if s != slug
+            ):
+                raise ValueError('Only one Alexa AI overlay camera is allowed in CPU-safe beta')
             self.cameras[slug] = camera
             self._save()
             return camera

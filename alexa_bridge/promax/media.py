@@ -10,6 +10,9 @@ from pathlib import Path
 import subprocess
 import threading
 import time
+import socket
+
+from .overlay import OverlayController, overlay_filters
 
 
 @dataclass
@@ -22,6 +25,8 @@ class CameraState:
     codec: str = ''
     effective_mode: str = ''
     audio_mode: str = 'off'
+    overlay_controller: object = None
+    overlay_port: int = 0
     starts: int = 0
     recoveries: int = 0
     stalls: int = 0
@@ -73,7 +78,7 @@ def select_mode(config, stream_info):
     return mode
 
 
-def stream_command(camera, target: Path, mode):
+def stream_command(camera, target: Path, mode, *, overlay_port=None):
     args = ['ffmpeg', '-hide_banner', '-nostdin', '-loglevel', 'error',
             '-rtsp_transport', 'tcp', '-fflags', '+genpts',
             '-i', camera['rtsp_url'], '-map', '0:v:0']
@@ -86,16 +91,22 @@ def stream_command(camera, target: Path, mode):
         args += ['-map', '0:a:0', '-c:a', 'aac', '-ar', '48000', '-ac', '1', '-b:a', '64k']
     else:
         raise ValueError('Unknown audio mode')
+    if camera.get('overlay_mode') == 'boxes' and (mode == 'copy' or not overlay_port):
+        raise ValueError('AI boxes require transcode and a private overlay port')
     if mode == 'copy':
         args += ['-c:v', 'copy', '-bsf:v', 'h264_mp4toannexb']
     else:
         fps, kbps = camera['fps'], camera['bitrate_kbps']
         w, h = camera['width'], camera['height']
         vf = (f'scale={w}:{h}:force_original_aspect_ratio=decrease,'
-              f'pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,format=yuv420p,fps={fps}')
+              f'pad={w}:{h}:(ow-iw)/2:(oh-ih)/2,fps={fps}')
+        if camera.get('overlay_mode') == 'boxes':
+            vf += ',' + overlay_filters(overlay_port)
+        vf += ',format=yuv420p'
         args += ['-vf', vf, '-c:v', 'libx264', '-profile:v', 'baseline',
                  '-level:v', ('3.1' if w * h <= 1280 * 720 else '4.0'),
-                 '-preset', 'veryfast', '-tune', 'zerolatency', '-bf', '0',
+                 '-preset', ('ultrafast' if camera.get('overlay_mode') == 'boxes' else 'veryfast'),
+                 '-tune', 'zerolatency', '-bf', '0',
                  '-g', str(fps), '-keyint_min', str(fps), '-sc_threshold', '0',
                  '-x264-params', 'repeat-headers=1:open-gop=0',
                  '-b:v', f'{kbps}k', '-maxrate', f'{kbps}k', '-bufsize', f'{kbps * 2}k']
@@ -157,6 +168,9 @@ class Manager:
             st.last_exit = code
             st.last_error = f'FFmpeg exited ({code})'
             st.proc = None
+            if st.overlay_controller:
+                st.overlay_controller.stop()
+                st.overlay_controller = None
             self._backoff(st, now)
             self._event(slug, 'worker_exit', 'Retry scheduled')
         if now < st.retry_after:
@@ -167,7 +181,8 @@ class Manager:
             if f.is_file() and f.suffix in ('.ts', '.m3u8'):
                 f.unlink(missing_ok=True)
         try:
-            mode = camera['mode']
+            overlay = camera.get('overlay_mode') == 'boxes'
+            mode = 'transcode' if overlay else camera['mode']
             if mode in ('auto', 'copy'):
                 video = inspect_source(camera['rtsp_url'])
                 mode = select_mode(camera, video)
@@ -177,9 +192,16 @@ class Manager:
             audio = camera.get('audio_mode', 'off')
             if audio == 'aac' and inspect_audio_source(camera['rtsp_url']) is None:
                 raise RuntimeError('Audio enabled but camera has no audio track')
-            cmd = stream_command(camera, target, mode)
+            controller = None
+            if overlay:
+                controller = OverlayController(self.store.root, slug, camera)
+                st.overlay_port = controller.port
+            cmd = stream_command(camera, target, mode, overlay_port=st.overlay_port if overlay else None)
             st.proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                        stderr=subprocess.DEVNULL, start_new_session=True)
+            if controller is not None:
+                st.overlay_controller = controller
+                controller.start(st.proc)
             st.started_at = now
             st.last_error = ''
             st.effective_mode = mode
@@ -225,6 +247,9 @@ class Manager:
                 print(f'[STOP] camera={slug}', flush=True)
             st.last_exit = proc.returncode
             st.proc = None
+            if st.overlay_controller:
+                st.overlay_controller.stop()
+                st.overlay_controller = None
             self._event(slug, 'stopped')
 
     def restart(self, slug):

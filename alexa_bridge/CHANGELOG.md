@@ -1,3 +1,8 @@
+## v0.7 Beta — experimental Alexa AI boxes
+- Optional per-camera dynamic HLS boxes from YOLOX observations.
+- OpenCV grab/retrieve avoids BGR conversion for unsampled frames.
+- Overlay OFF by default; no Alexa endpoint changes.
+
 ## 0.6.1b1 — 2026-11-19 — AI diagnostic video frames
 
 - Add optional annotated JPEG camera viewer with model bounding boxes and confidence, served exclusively by admin API and CSRF.

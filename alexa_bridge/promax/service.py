@@ -70,7 +70,7 @@ def make_handler(app: Application, admin=False):
                 elif path == '/static/app.js':
                     respond(self, 200, (STATIC / 'app.js').read_bytes(), 'application/javascript; charset=utf-8', head=head)
                 elif path == '/api/state':
-                    json_reply(self, 200, {'version': '0.6.1b1', 'csrf': app.csrf,
+                    json_reply(self, 200, {'version': '0.7.0b1', 'csrf': app.csrf,
                                            'cameras': app.store.public(), 'status': app.manager.status(),
                                            'uptime_seconds': round(time.time() - app.started)}, head=head)
                 elif path == '/api/diagnostics':
@@ -343,7 +343,7 @@ def serve():
     ui = ThreadingHTTPServer(('0.0.0.0', ui_port), make_handler(app, admin=True))
     media = ThreadingHTTPServer(('0.0.0.0', media_port), make_handler(app))
     threading.Thread(target=ui.serve_forever, daemon=True, name='admin-ui').start()
-    print(f'Alexa RTSP Bridge Pro v0.6.1b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
+    print(f'Alexa RTSP Bridge Pro v0.7.0b1 started (UI {ui_port}, signed HLS {media_port})', flush=True)
     try:
         media.serve_forever()
     finally:

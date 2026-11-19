@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Alexa RTSP Bridge Pro</title><link rel="stylesheet" href="static/app.css"></head>
-<body><div class="layout"><aside class="side"><div class="brand">◉ <span>Alexa RTSP<br><b>Bridge Pro</b></span></div><div class="nav selected">▣ &nbsp; Dashboard</div><div class="nav">◫ &nbsp; Cameras</div><button type="button" class="nav diag-trigger" id="diagnostics-open">◇ &nbsp; Diagnostics</button><button type="button" class="nav" id="ai-open">◎ &nbsp; AI Detector</button><button type="button" class="nav setup-trigger" id="setup-open">⚙ &nbsp; Install wizard</button><div class="sidefoot">v0.6.1 AI diagnostic viewer<br><span>Local camera gateway</span></div></aside>
+<body><div class="layout"><aside class="side"><div class="brand">◉ <span>Alexa RTSP<br><b>Bridge Pro</b></span></div><div class="nav selected">▣ &nbsp; Dashboard</div><div class="nav">◫ &nbsp; Cameras</div><button type="button" class="nav diag-trigger" id="diagnostics-open">◇ &nbsp; Diagnostics</button><button type="button" class="nav" id="ai-open">◎ &nbsp; AI Detector</button><button type="button" class="nav setup-trigger" id="setup-open">⚙ &nbsp; Install wizard</button><div class="sidefoot">v0.7 experimental Alexa overlay<br><span>Local camera gateway</span></div></aside>
 <main><header><div><div class="eyebrow">HOME ASSISTANT + FIRE TV</div><h1>Camera dashboard</h1><p>Manage RTSP feeds, check their status and prepare Alexa endpoints.</p></div><span class="pill" id="health">● Local gateway</span></header>
 <section class="metrics"><article class="metric"><span>Cameras</span><strong id="count">—</strong></article><article class="metric"><span>Streaming now</span><strong id="online">—</strong></article><article class="metric"><span>Runtime</span><strong id="uptime">—</strong></article><article class="metric"><span>Mode</span><strong>On demand</strong></article></section>
 <section class="card"><div class="cardhead"><div><h2>Your cameras</h2><p>Credentials stay in the private data directory.</p></div><button class="button primary" id="new">+ Add camera</button></div><div class="grid" id="cameras"><p>Loading cameras…</p></div></section>
@@ -38,7 +38,12 @@
     <option value="off">Off — video only (default)</option>
     <option value="aac">On — encode camera audio to AAC</option>
   </select>
-</label><p class="small">Disabling camera audio does not guarantee that Fire TV will keep music playing. Alexa/Fire TV controls audio focus. When enabled, the RTSP source must contain an audio track. Update Lambda endpoint mapping if you change this setting.</p>
+</label><label>AI boxes on Alexa / Fire TV (experimental)
+  <select name="overlay_mode">
+    <option value="off">Off — original video (recommended)</option>
+    <option value="boxes">On — burn detected boxes into HLS (extra CPU)</option>
+  </select>
+</label><p class="small">AI overlay applies to the next stream start. Enable local AI detection for this camera. The video is trans-coded to H.264, while YOLOX runs separately at its existing sample rate. Test only ONE camera first.</p><p class="small">Disabling camera audio does not guarantee that Fire TV will keep music playing. Alexa/Fire TV controls audio focus. When enabled, the RTSP source must contain an audio track. Update Lambda endpoint mapping if you change this setting.</p>
 <label>Bitrate (kbit/s)<input name="bitrate_kbps" type="number" min="250" max="6000" value="1000"></label><p class="error" id="form-error"></p><div class="actions right"><button class="button" type="button" id="cancel">Cancel</button><button class="button primary" type="submit">Save camera</button></div></form></dialog>
 <div role="status" class="toast" id="toast" hidden></div>
 <dialog id="setup-wizard" class="setup-wizard" aria-labelledby="wizard-title">

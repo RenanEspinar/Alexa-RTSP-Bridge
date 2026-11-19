@@ -30,7 +30,7 @@ function draw() {
     const title=document.createElement('div');title.className='cam-title';
     const name=document.createElement('b');name.textContent=cam.name;
     const badge=document.createElement('span');badge.className='badge'+(st.running?' online':'');badge.textContent=st.running?'● STREAMING':'○ IDLE';title.append(name,badge);
-    const meta=document.createElement('p');meta.className='meta';meta.textContent=cam.slug+' · '+cam.mode.toUpperCase()+(st.mode?' → '+st.mode:'')+' · AUDIO '+(cam.audio_mode==='aac'?'AAC':'OFF')+' · '+(st.starts||0)+' starts' + (st.recoveries ? ' · '+st.recoveries+' recoveries' : '');
+    const meta=document.createElement('p');meta.className='meta';meta.textContent=cam.slug+' · '+cam.mode.toUpperCase()+(st.mode?' → '+st.mode:'')+' · AUDIO '+(cam.audio_mode==='aac'?'AAC':'OFF')+' · AI BOXES '+(cam.overlay_mode==='boxes'?'ON':'OFF')+' · '+(st.starts||0)+' starts' + (st.recoveries ? ' · '+st.recoveries+' recoveries' : '');
     const actions=document.createElement('div');actions.className='actions';
     actions.append(
       button('Snapshot',async()=>{try{
@@ -57,7 +57,7 @@ function draw() {
   });
 }
 function edit(cam=null){const form=$('camera-form');form.reset();$('form-error').textContent='';
-  if(cam){for(const k of ['slug','name','alexa_endpoint_id','mode','audio_mode','fps','width','height','bitrate_kbps']) form.elements[k].value=cam[k];form.elements.slug.readOnly=true;}
+  if(cam){for(const k of ['slug','name','alexa_endpoint_id','mode','audio_mode','overlay_mode','fps','width','height','bitrate_kbps']) form.elements[k].value=cam[k];form.elements.slug.readOnly=true;}
   else form.elements.slug.readOnly=false;
   $('editor').showModal();
 }
@@ -65,7 +65,7 @@ $('new').onclick=()=>edit();$('close').onclick=()=>closeCameraEditor();$('cancel
 function closeCameraEditor(){ $('editor').close(); if(wizardCameraEditor){wizardCameraEditor=false;wizardStep=1;openWizard();} }
 
 $('camera-form').onsubmit=async event=>{event.preventDefault();const f=event.target;const obj={};
-  for(const k of ['slug','name','alexa_endpoint_id','mode','audio_mode','rtsp_url']) obj[k]=f.elements[k].value;
+  for(const k of ['slug','name','alexa_endpoint_id','mode','audio_mode','overlay_mode','rtsp_url']) obj[k]=f.elements[k].value;
   for(const k of ['fps','width','height','bitrate_kbps']) obj[k]=Number(f.elements[k].value);
   try{await api('api/cameras','POST',obj);$('editor').close();toast('Camera saved');await refresh();
     if(wizardCameraEditor){wizardCameraEditor=false;wizardStep=2;openWizard();}

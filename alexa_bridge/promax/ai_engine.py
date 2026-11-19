@@ -280,7 +280,9 @@ class Worker:
                 self.active_sources[slug]=url
                 self.gates[slug]=MotionGate()
                 self.trackers[slug]=TrackBuffer()
-            ok,frame=cap.read()
+            # Keep the RTSP decoder advancing, but do not convert every decoded
+            # full-resolution frame into BGR. Retrieve only when a scan is due.
+            ok = cap.grab()
             if not ok:
                 cap.release();self.opened.pop(slug,None)
                 self.active_sources.pop(slug,None)
@@ -288,7 +290,13 @@ class Worker:
                                   message='No new frame',detections=self.count)
                 continue
             due=self.next_scan.get(slug,0)
-            if time.monotonic()<due:continue
+            if time.monotonic()<due:
+                continue
+            ok, frame = cap.retrieve()
+            if not ok:
+                self.ai.heartbeat('camera_offline',camera=slug,model_loaded=True,
+                                  message='Frame decode failed',detections=self.count)
+                continue
             road_mode=bool(conf.get('road_mode',False))
             interval=1 if road_mode else int(settings['interval_seconds'])
             self.next_scan[slug]=time.monotonic()+interval
@@ -304,6 +312,12 @@ class Worker:
                 tic=time.monotonic()
                 detections=self.detector.infer(frame,float(settings['confidence']))
                 elapsed_ms=(time.monotonic()-tic)*1000
+                if cam.get('overlay_mode') == 'boxes':
+                    try:
+                        self.ai.save_live_boxes(slug,width=frame.shape[1],height=frame.shape[0],
+                                                objects=detections,ttl_seconds=(2.5 if road_mode else min(8,2*interval)))
+                    except (OSError,ValueError) as exc:
+                        LOG.warning('Private overlay metadata unavailable: %s',type(exc).__name__)
             if watched:
                 try:
                     jpg=annotated_jpeg(frame,detections)
